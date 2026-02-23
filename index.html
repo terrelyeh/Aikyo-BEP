@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>冰店損益平衡分析</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Noto Sans TC', 'Inter', sans-serif; background: #FDF8F2; color: #1C1C1E; }
+    .card { background: #fff; border: 1px solid #EDE8E0; border-radius: 16px; }
+    .bep-glow { box-shadow: 0 0 0 1px #E8744F30, 0 4px 24px #E8744F18; }
+    input[type=range] { accent-color: #E8744F; }
+    input[type=number] { border: 1px solid #E5E0D8; border-radius: 8px; padding: 5px 10px; font-size: 15px; width: 104px; text-align: right; background: #FDF8F2; }
+    input[type=number]:focus { outline: 2px solid #E8744F40; border-color: #E8744F; }
+    input[type=range] { height: 6px; }
+    .scenario-btn { transition: all 150ms; }
+    .scenario-btn.active { background: #E8744F; color: #fff; }
+    .tag { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 99px; }
+    .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #a8a29e; margin-bottom: 1rem; }
+    .cost-label { font-size: 13.5px; }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <div class="max-w-6xl mx-auto px-6 py-8">
+
+    <!-- Header -->
+    <div class="mb-10">
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <span class="tag bg-orange-100 text-orange-700">保守版</span>
+        <span class="tag bg-stone-100 text-stone-600">正職 cover 50%</span>
+        <span class="tag bg-stone-100 text-stone-600">2026-02-23</span>
+      </div>
+      <h1 class="text-3xl lg:text-4xl font-bold mb-2">冰店損益平衡分析</h1>
+      <p class="text-stone-500 text-base">調整參數，所有數字即時更新。適合與團隊溝通討論。</p>
+    </div>
+
+    <div class="grid lg:grid-cols-[360px_1fr] gap-8">
+
+      <!-- LEFT: Controls -->
+      <div class="space-y-4">
+
+        <!-- 產品設定 -->
+        <div class="card p-5">
+          <p class="section-label">產品設定</p>
+          <div class="space-y-3">
+
+            <!-- 霜淇淋 -->
+            <div class="flex items-center justify-between">
+              <span class="text-base text-stone-600">🍦 霜淇淋售價</span>
+              <div class="flex items-center gap-1"><input type="number" id="price_soft" value="150" min="50" max="500" onchange="calc()" /> <span class="text-sm text-stone-400">元</span></div>
+            </div>
+            <div class="pl-4 border-l-2 border-orange-100">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-sm text-stone-500">毛利率</span>
+                <span class="text-sm font-semibold text-orange-500" id="gm_soft_display">62%</span>
+              </div>
+              <input type="range" id="gm_soft" min="30" max="90" value="62" step="1" oninput="calc()" class="w-full cursor-pointer" />
+            </div>
+
+            <div class="border-t border-stone-100"></div>
+
+            <!-- 聖代 -->
+            <div class="flex items-center justify-between">
+              <span class="text-base text-stone-600">🍨 聖代售價</span>
+              <div class="flex items-center gap-1"><input type="number" id="price_sundae" value="250" min="50" max="500" onchange="calc()" /> <span class="text-sm text-stone-400">元</span></div>
+            </div>
+            <div class="pl-4 border-l-2 border-amber-100">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-sm text-stone-500">毛利率</span>
+                <span class="text-sm font-semibold text-amber-500" id="gm_sundae_display">65%</span>
+              </div>
+              <input type="range" id="gm_sundae" min="30" max="90" value="65" step="1" oninput="calc()" class="w-full cursor-pointer" style="accent-color:#F59E0B" />
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 通路設定 -->
+        <div class="card p-5" style="background:#F6F3FF; border-color:#DDD6F5;">
+          <div class="flex items-center justify-between mb-3">
+            <p class="section-label" style="margin-bottom:0">通路設定</p>
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <span class="text-sm text-stone-500">酒場合作</span>
+              <div class="relative w-9 h-5">
+                <input type="checkbox" id="b2b_enabled" class="sr-only" onchange="calc()">
+                <div class="absolute inset-0 rounded-full transition-colors duration-200" id="b2b_track" style="background:#d1d5db"></div>
+                <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200" id="b2b_thumb"></div>
+              </div>
+            </label>
+          </div>
+          <div id="b2b_settings" class="space-y-3 hidden">
+            <div class="rounded-lg bg-purple-50 border border-purple-100 px-3 py-2.5">
+              <p class="text-xs font-semibold text-purple-700 mb-0.5">🍻 酒場員工推銷返利 20%</p>
+              <p class="text-xs text-stone-400 leading-relaxed">酒場每賣一份，返還 20% 毛利給酒場。填入預計月售量，計算酒場貢獻可抵多少固定成本。</p>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-stone-600">🍦 霜淇淋月售量</span>
+              <div class="flex items-center gap-1"><input type="number" id="b2b_soft_qty" value="150" min="0" max="999" onchange="calc()" /> <span class="text-sm text-stone-400">份</span></div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-stone-600">🍨 聖代月售量</span>
+              <div class="flex items-center gap-1"><input type="number" id="b2b_sundae_qty" value="80" min="0" max="999" onchange="calc()" /> <span class="text-sm text-stone-400">份</span></div>
+            </div>
+            <div class="rounded-lg bg-stone-50 px-3 py-2.5 text-xs text-stone-500 space-y-1.5" id="b2b_impact"></div>
+          </div>
+        </div>
+
+        <!-- 營運設定 -->
+        <div class="card p-5">
+          <p class="section-label">營運設定</p>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-base text-stone-600">每月營業天數</span>
+              <div class="flex items-center gap-1"><input type="number" id="days" value="24" min="1" max="31" onchange="calc()" /> <span class="text-sm text-stone-400">天</span></div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-base text-stone-600">每日營業時數</span>
+              <div class="flex items-center gap-1"><input type="number" id="hours" value="9" min="1" max="16" onchange="calc()" /> <span class="text-sm text-stone-400">小時</span></div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-base text-stone-600">PT cover 比例</span>
+                <span class="text-sm font-semibold text-blue-600" id="pt_pct_display">50%</span>
+              </div>
+              <input type="range" id="pt_pct" min="0" max="100" value="50" step="5" oninput="calc()" class="w-full h-1.5 rounded-full cursor-pointer" style="accent-color:#3B82F6" />
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-base text-stone-600">PT 時薪</span>
+              <div class="flex items-center gap-1"><input type="number" id="pt_wage" value="200" min="160" max="400" onchange="calc()" /> <span class="text-sm text-stone-400">元</span></div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-base text-stone-600">PT 人數</span>
+              <div class="flex items-center gap-1"><input type="number" id="pt_count" value="2" min="0" max="10" onchange="calc()" /> <span class="text-sm text-stone-400">人</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 固定成本 -->
+        <div class="card p-5">
+          <p class="section-label">每月固定成本</p>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-base text-stone-600">房租</span>
+              <div class="flex items-center gap-1"><input type="number" id="rent" value="13000" min="0" max="100000" step="500" onchange="calc()" /> <span class="text-sm text-stone-400">元</span></div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-base text-stone-600">水電 / 清潔</span>
+              <div class="flex items-center gap-1"><input type="number" id="utilities" value="2000" min="0" max="30000" step="100" onchange="calc()" /> <span class="text-sm text-stone-400">元</span></div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-base text-stone-600">固定資產折舊</span>
+              <div class="flex items-center gap-1"><input type="number" id="depreciation" value="11590" min="0" max="50000" step="100" onchange="calc()" /> <span class="text-sm text-stone-400">元</span></div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-base text-stone-600">正職薪資（含雇主負擔）</span>
+              <div class="flex items-center gap-1"><input type="number" id="fulltime" value="41155" min="0" max="100000" step="500" onchange="calc()" /> <span class="text-sm text-stone-400">元</span></div>
+            </div>
+            <div class="border-t border-stone-100 pt-3">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-semibold text-stone-700">PT 排班成本</span>
+                <span class="text-sm font-semibold text-blue-600" id="pt_cost_display">29,120 元</span>
+              </div>
+              <p class="text-xs text-stone-400 mt-1" id="pt_hours_display">145.6 小時 × 200 元</p>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-stone-600">PT 勞保 / 勞退公提</span>
+              <span class="text-sm text-stone-500" id="pt_insurance_display">1,700 元</span>
+            </div>
+            <div class="border-t-2 border-stone-200 pt-3">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-bold text-stone-800">固定成本合計</span>
+                <span class="text-sm font-bold text-stone-800" id="total_fixed_display">96,865 元</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="space-y-4">
+
+        <!-- BEP 結果 -->
+        <div class="card bep-glow p-6 text-center">
+          <span class="inline-block text-xs font-bold tracking-wide text-orange-600 bg-orange-50 border border-orange-200 rounded-full px-3 py-1 mb-4">損益平衡點（BEP）月營業額</span>
+          <div class="text-5xl lg:text-7xl font-bold text-orange-500 mb-2" id="bep_display">161,442</div>
+          <div class="text-stone-400 text-base mb-5">元 / 月</div>
+          <div class="flex justify-center gap-4 text-sm text-stone-500">
+            <span><span id="bep_fc_label">固定成本</span> <span id="bep_fixed" class="font-semibold text-stone-700">96,865</span> 元</span>
+            <span>÷</span>
+            <span>混合毛利率 <span id="bep_gm" class="font-semibold text-stone-700">60%</span></span>
+          </div>
+          <div id="b2b_contrib_row" class="hidden mt-2 flex justify-center">
+            <span class="text-xs text-purple-600 bg-purple-50 rounded-full px-3 py-1">🍻 酒場月貢獻 <span id="b2b_contrib_display">0</span> 元（利潤）已抵固定成本</span>
+          </div>
+          <div id="b2b_total_row" class="hidden mt-5 pt-5 border-t-2 border-stone-100">
+            <p class="text-sm font-semibold text-stone-600 text-center mb-3">損益平衡時 · 全通路營業額</p>
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="bg-stone-50 rounded-xl p-3">
+                <p class="text-xs text-stone-400 mb-1">直銷</p>
+                <p class="font-bold text-stone-700 text-base" id="b2b_total_direct">—</p>
+              </div>
+              <div class="bg-purple-50 rounded-xl p-3">
+                <p class="text-xs text-purple-400 mb-1">🍻 酒場</p>
+                <p class="font-bold text-purple-600 text-base" id="b2b_total_bar">—</p>
+              </div>
+              <div class="bg-orange-50 rounded-xl p-3">
+                <p class="text-xs text-orange-400 mb-1">合計</p>
+                <p class="font-bold text-orange-600 text-base" id="b2b_total_all">—</p>
+              </div>
+            </div>
+            <div class="mt-3 flex justify-between items-center bg-stone-100 rounded-xl px-4 py-3">
+              <span class="text-sm font-medium text-stone-500">全通路綜合毛利率</span>
+              <span class="text-xl font-bold text-stone-700" id="b2b_blended_gm">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 品項情境 -->
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-4">
+            <p class="section-label">銷量目標情境</p>
+            <div class="flex flex-wrap gap-1.5">
+              <button class="scenario-btn text-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500" onclick="setScenario('soft')" id="btn_soft">全霜淇淋</button>
+              <button class="scenario-btn active text-sm px-3 py-1.5 rounded-full border border-orange-200" onclick="setScenario('half')" id="btn_half">各半</button>
+              <button class="scenario-btn text-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500" onclick="setScenario('sundae')" id="btn_sundae">全聖代</button>
+              <button class="scenario-btn text-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500" onclick="setScenario('custom')" id="btn_custom">自訂</button>
+            </div>
+          </div>
+
+          <!-- 自訂比例 slider -->
+          <div id="custom_slider_row" class="hidden mb-4 bg-stone-50 rounded-xl px-4 py-3">
+            <div class="flex justify-between text-sm font-semibold mb-2">
+              <span class="text-orange-500">🍦 霜淇淋 <span id="custom_soft_label">50</span>%</span>
+              <span class="text-amber-500">🍨 聖代 <span id="custom_sundae_label">50</span>%</span>
+            </div>
+            <input type="range" id="custom_sundae_pct" min="0" max="100" value="50" step="5" oninput="calc()" class="w-full cursor-pointer" />
+            <div class="flex justify-between text-xs text-stone-400 mt-1.5">
+              <span>全霜淇淋</span><span>各半</span><span>全聖代</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3 mb-5">
+            <div class="bg-orange-50 rounded-xl p-4 text-center">
+              <p class="text-sm text-stone-500 mb-1">月銷售目標</p>
+              <p class="text-3xl font-bold text-orange-600" id="s_monthly">1,077</p>
+              <p class="text-sm text-stone-400">份 / 月</p>
+            </div>
+            <div class="bg-amber-50 rounded-xl p-4 text-center">
+              <p class="text-sm text-stone-500 mb-1">每日目標</p>
+              <p class="text-3xl font-bold text-amber-600" id="s_daily">42</p>
+              <p class="text-sm text-stone-400">份 / 日</p>
+            </div>
+            <div class="bg-yellow-50 rounded-xl p-4 text-center">
+              <p class="text-sm text-stone-500 mb-1">每小時目標</p>
+              <p class="text-3xl font-bold text-yellow-600" id="s_hourly">5.25</p>
+              <p class="text-sm text-stone-400">份 / 小時</p>
+            </div>
+          </div>
+
+          <!-- 三情境對比 -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-stone-100">
+                  <th class="text-left text-stone-400 font-medium py-2 pr-3">情境</th>
+                  <th class="text-right text-stone-400 font-medium py-2 pr-3">有效 GM</th>
+                  <th class="text-right text-stone-400 font-medium py-2 pr-3">平均單價</th>
+                  <th class="text-right text-stone-400 font-medium py-2 pr-3">月（份）</th>
+                  <th class="text-right text-stone-400 font-medium py-2 pr-3">日（份）</th>
+                  <th class="text-right text-stone-400 font-medium py-2">時（份）</th>
+                </tr>
+              </thead>
+              <tbody id="scenario_table" class="divide-y divide-stone-50">
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 免責說明 -->
+        <div class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <svg class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          <p class="text-sm text-amber-800 leading-relaxed"><strong>注意：</strong>此 BEP 僅涵蓋固定成本（房租、薪資、折舊等），<strong>尚未納入行銷推廣、促銷折扣、外送平台抽成等變動成本</strong>。實際損益平衡點將高於此數字，建議加入變動成本後再作最終決策。</p>
+        </div>
+
+        <!-- P&L 敏感度圖 -->
+        <div class="card p-5">
+          <p class="section-label">損益敏感度</p>
+          <p class="text-sm text-stone-400 mb-4">不同月營業額下的損益金額 — 綠色為獲利、紅色為虧損</p>
+          <canvas id="bepChart" height="190"></canvas>
+        </div>
+
+        <!-- 成本結構圖 -->
+        <div class="card p-5">
+          <p class="section-label">固定成本結構</p>
+          <div id="cost_bars" class="space-y-2"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <p class="text-center text-sm text-stone-400 mt-10">僅供內部溝通參考 · 數字可調整 · 不代表最終決策</p>
+  </div>
+
+<script>
+let currentScenario = 'half';
+let chart = null;
+
+function fmt(n) { return Math.round(n).toLocaleString('zh-TW'); }
+function fmtDec(n, d=2) { return n.toFixed(d); }
+
+function blendedGM(priceSoft, priceSundae, gmSoft, gmSundae, key) {
+  if (key === 'soft')   return gmSoft;
+  if (key === 'sundae') return gmSundae;
+  // 各半（by units）→ 以營收加權
+  return (priceSoft * gmSoft + priceSundae * gmSundae) / (priceSoft + priceSundae);
+}
+
+function calc() {
+  const priceSoft   = +document.getElementById('price_soft').value;
+  const priceSundae = +document.getElementById('price_sundae').value;
+  const gmSoft      = +document.getElementById('gm_soft').value / 100;
+  const gmSundae    = +document.getElementById('gm_sundae').value / 100;
+  const days        = +document.getElementById('days').value;
+  const hours       = +document.getElementById('hours').value;
+  const ptPct       = +document.getElementById('pt_pct').value / 100;
+  const ptWage      = +document.getElementById('pt_wage').value;
+  const ptCount     = +document.getElementById('pt_count').value;
+  const b2bEnabled  = document.getElementById('b2b_enabled').checked;
+  const B2B_REBATE  = 0.20;
+  const rent        = +document.getElementById('rent').value;
+  const utilities   = +document.getElementById('utilities').value;
+  const depreciation= +document.getElementById('depreciation').value;
+  const fulltime    = +document.getElementById('fulltime').value;
+
+  // PT cost
+  const totalHours    = hours * days;
+  const ptHours       = totalHours * ptPct;
+  const ptCost        = ptHours * ptWage;
+  const ptInsurance   = ptCount * 1700;
+
+  // Fixed total
+  const fixedTotal = rent + utilities + depreciation + fulltime + ptCost + ptInsurance;
+
+  // B2B bar contribution (gross profit × 80% after 20% rebate)
+  const b2bSoftQty   = b2bEnabled ? +document.getElementById('b2b_soft_qty').value : 0;
+  const b2bSundaeQty = b2bEnabled ? +document.getElementById('b2b_sundae_qty').value : 0;
+  const b2bContrib   = b2bSoftQty   * priceSoft   * gmSoft   * (1 - B2B_REBATE)
+                     + b2bSundaeQty * priceSundae * gmSundae * (1 - B2B_REBATE);
+  const directFC     = Math.max(0, fixedTotal - b2bContrib);
+
+  // Scenarios: BEP is for direct sales only (bar contribution already offsets FC)
+  const scenarios = [
+    { label: '全霜淇淋', price: priceSoft,                       key: 'soft',   gm: blendedGM(priceSoft, priceSundae, gmSoft, gmSundae, 'soft') },
+    { label: '各半',     price: (priceSoft + priceSundae) / 2,   key: 'half',   gm: blendedGM(priceSoft, priceSundae, gmSoft, gmSundae, 'half') },
+    { label: '全聖代',   price: priceSundae,                      key: 'sundae', gm: blendedGM(priceSoft, priceSundae, gmSoft, gmSundae, 'sundae') },
+  ];
+  if (currentScenario === 'custom') {
+    const sundaePct   = +document.getElementById('custom_sundae_pct').value / 100;
+    const softPct     = 1 - sundaePct;
+    const customPrice = softPct * priceSoft + sundaePct * priceSundae;
+    const customGM    = (softPct * priceSoft * gmSoft + sundaePct * priceSundae * gmSundae) / customPrice;
+    scenarios.push({ label: '自訂', price: customPrice, key: 'custom', gm: customGM });
+    document.getElementById('custom_soft_label').textContent   = Math.round(softPct * 100);
+    document.getElementById('custom_sundae_label').textContent = Math.round(sundaePct * 100);
+  }
+  scenarios.forEach(s => s.bep = directFC / s.gm);
+
+  // Active scenario
+  const active = scenarios.find(s => s.key === currentScenario);
+  const gm = active.gm;
+  const bep = active.bep;
+
+  // Update controls display
+  document.getElementById('gm_soft_display').textContent   = Math.round(gmSoft * 100) + '%';
+  document.getElementById('gm_sundae_display').textContent = Math.round(gmSundae * 100) + '%';
+  document.getElementById('pt_pct_display').textContent = Math.round(ptPct * 100) + '%';
+  document.getElementById('pt_cost_display').textContent = fmt(ptCost) + ' 元';
+  document.getElementById('pt_hours_display').textContent = fmtDec(ptHours, 1) + ' 小時 × ' + ptWage + ' 元';
+  document.getElementById('pt_insurance_display').textContent = fmt(ptInsurance) + ' 元';
+
+  // B2B toggle visual + impact
+  const b2bTrack      = document.getElementById('b2b_track');
+  const b2bThumb      = document.getElementById('b2b_thumb');
+  const b2bSettings   = document.getElementById('b2b_settings');
+  const b2bContribRow = document.getElementById('b2b_contrib_row');
+  const b2bTotalRow   = document.getElementById('b2b_total_row');
+  if (b2bEnabled) {
+    b2bTrack.style.background = '#9333EA';
+    b2bThumb.style.transform  = 'translateX(16px)';
+    b2bSettings.classList.remove('hidden');
+    b2bContribRow.classList.remove('hidden');
+    b2bTotalRow.classList.remove('hidden');
+    const barRevenue   = b2bSoftQty * priceSoft + b2bSundaeQty * priceSundae;
+    const totalRevenue = bep + barRevenue;
+    document.getElementById('b2b_total_direct').textContent = fmt(bep) + ' 元';
+    document.getElementById('b2b_total_bar').textContent    = fmt(barRevenue) + ' 元';
+    document.getElementById('b2b_total_all').textContent    = fmt(totalRevenue) + ' 元';
+    const blendedGMRate = fixedTotal / totalRevenue;
+    document.getElementById('b2b_blended_gm').textContent  = (blendedGMRate * 100).toFixed(1) + '%';
+    const softContrib   = b2bSoftQty   * priceSoft   * gmSoft   * (1 - B2B_REBATE);
+    const sundaeContrib = b2bSundaeQty * priceSundae * gmSundae * (1 - B2B_REBATE);
+    document.getElementById('b2b_contrib_display').textContent = fmt(b2bContrib);
+    document.getElementById('b2b_impact').innerHTML = `
+      <div class="flex justify-between font-semibold">
+        <span>酒場總營業額</span><span class="text-stone-600">${fmt(barRevenue)} 元</span>
+      </div>
+      <div class="border-t border-stone-200 mt-1.5 pt-1.5 flex justify-between text-stone-400">
+        <span>🍦 霜淇淋 ${b2bSoftQty} 份 毛利</span><span>+${fmt(softContrib)} 元</span>
+      </div>
+      <div class="flex justify-between text-stone-400">
+        <span>🍨 聖代 ${b2bSundaeQty} 份 毛利</span><span>+${fmt(sundaeContrib)} 元</span>
+      </div>
+      <div class="border-t border-stone-200 mt-1.5 pt-1.5 flex justify-between font-semibold">
+        <span>酒場貢獻利潤</span><span class="text-purple-600">+${fmt(b2bContrib)} 元</span>
+      </div>
+    `;
+  } else {
+    b2bTrack.style.background = '#d1d5db';
+    b2bThumb.style.transform  = '';
+    b2bSettings.classList.add('hidden');
+    b2bContribRow.classList.add('hidden');
+    b2bTotalRow.classList.add('hidden');
+  }
+  document.getElementById('total_fixed_display').textContent = fmt(fixedTotal) + ' 元';
+
+  // BEP display
+  document.getElementById('bep_display').textContent = fmt(bep);
+  document.getElementById('bep_fc_label').textContent = b2bEnabled ? '直銷（愛嬌門市）需承擔成本' : '固定成本';
+  document.getElementById('bep_fixed').textContent = fmt(b2bEnabled ? directFC : fixedTotal);
+  document.getElementById('bep_gm').textContent = (gm * 100).toFixed(1) + '%';
+
+  // Scenario table
+  const tbody = document.getElementById('scenario_table');
+  tbody.innerHTML = '';
+  scenarios.forEach(s => {
+    const monthly = s.bep / s.price;
+    const daily   = monthly / days;
+    const hourly  = daily / hours;
+    const isActive = s.key === currentScenario;
+    const tr = document.createElement('tr');
+    tr.className = isActive ? 'bg-orange-50' : '';
+    tr.innerHTML = `
+      <td class="py-2 pr-3 font-medium ${isActive ? 'text-orange-700' : 'text-stone-600'}">${s.label}</td>
+      <td class="py-2 pr-3 text-right text-stone-400">${(s.gm*100).toFixed(1)}%</td>
+      <td class="py-2 pr-3 text-right text-stone-500">${s.price} 元</td>
+      <td class="py-2 pr-3 text-right font-semibold ${isActive ? 'text-orange-700' : 'text-stone-700'}">${fmt(monthly)}</td>
+      <td class="py-2 pr-3 text-right font-semibold ${isActive ? 'text-orange-700' : 'text-stone-700'}">${fmt(daily)}</td>
+      <td class="py-2 text-right font-semibold ${isActive ? 'text-orange-700' : 'text-stone-700'}">${fmtDec(hourly, 2)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Active scenario cards
+  const mSales = bep / active.price;
+  document.getElementById('s_monthly').textContent = fmt(mSales);
+  document.getElementById('s_daily').textContent   = fmt(mSales / days);
+  document.getElementById('s_hourly').textContent  = fmtDec(mSales / days / hours, 2);
+
+  // P&L Sensitivity Chart
+  // X axis: monthly revenue from 0 to 2x BEP, step = bep/20
+  const steps = 30;
+  const maxRev = bep * 2;
+  const revLabels = Array.from({length: steps + 1}, (_, i) => Math.round(maxRev / steps * i));
+  // Profit = Revenue × GM - FixedCosts
+  const plData = revLabels.map(r => Math.round(r * gm - fixedTotal));
+  // Coloring: red if loss, green if profit
+  const pointColors = plData.map(v => v < 0 ? '#EF444480' : '#22C55E80');
+  const segmentColors = plData.map(v => v < 0 ? '#EF4444' : '#22C55E');
+
+  if (chart) chart.destroy();
+  const ctx = document.getElementById('bepChart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: revLabels.map(v => (v / 10000).toFixed(1) + '萬'),
+      datasets: [
+        {
+          label: '月損益',
+          data: plData,
+          borderColor: function(context) {
+            if (!context.chart.chartArea) return '#94a3b8';
+            const chart = context.chart;
+            const {ctx: c, chartArea, scales} = chart;
+            const zeroY = scales.y.getPixelForValue(0);
+            const top = chartArea.top, bottom = chartArea.bottom;
+            const grad = c.createLinearGradient(0, top, 0, bottom);
+            const zeroFrac = Math.max(0, Math.min(1, (zeroY - top) / (bottom - top)));
+            grad.addColorStop(0, '#22C55E');
+            grad.addColorStop(zeroFrac, '#22C55E');
+            grad.addColorStop(zeroFrac, '#EF4444');
+            grad.addColorStop(1, '#EF4444');
+            return grad;
+          },
+          backgroundColor: function(context) {
+            if (!context.chart.chartArea) return 'transparent';
+            const {ctx: c, chartArea, scales} = context.chart;
+            const zeroY = scales.y.getPixelForValue(0);
+            const top = chartArea.top, bottom = chartArea.bottom;
+            const zeroFrac = Math.max(0, Math.min(1, (zeroY - top) / (bottom - top)));
+            const grad = c.createLinearGradient(0, top, 0, bottom);
+            grad.addColorStop(0, '#22C55E18');
+            grad.addColorStop(zeroFrac, '#22C55E08');
+            grad.addColorStop(zeroFrac, '#EF444408');
+            grad.addColorStop(1, '#EF444418');
+            return grad;
+          },
+          fill: true,
+          tension: 0.3,
+          pointRadius: 0,
+          borderWidth: 2.5,
+        },
+        {
+          label: 'BEP（損益=0）',
+          data: revLabels.map(() => 0),
+          borderColor: '#E8744F',
+          borderDash: [4, 4],
+          pointRadius: 0,
+          borderWidth: 1.5,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: items => '月營業額：' + revLabels[items[0].dataIndex].toLocaleString('zh-TW') + ' 元',
+            label: item => {
+              if (item.datasetIndex === 1) return null;
+              const v = item.parsed.y;
+              return (v >= 0 ? '▲ 獲利 ' : '▼ 虧損 ') + Math.abs(v).toLocaleString('zh-TW') + ' 元';
+            },
+            labelColor: item => ({
+              borderColor: item.parsed.y >= 0 ? '#22C55E' : '#EF4444',
+              backgroundColor: item.parsed.y >= 0 ? '#22C55E' : '#EF4444',
+            })
+          }
+        },
+        annotation: {}
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 10 }, maxTicksLimit: 8, color: '#94a3b8' }
+        },
+        y: {
+          grid: { color: '#f3f0eb' },
+          ticks: {
+            font: { size: 11 }, color: '#94a3b8',
+            callback: v => {
+              if (v === 0) return '± 0';
+              return (v >= 0 ? '+' : '') + (v / 10000).toFixed(1) + '萬';
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Cost bars
+  const costItems = [
+    { label: '正職薪資', value: fulltime, color: '#E8744F' },
+    { label: 'PT 排班', value: ptCost, color: '#FB923C' },
+    { label: 'PT 勞保 / 勞退公提', value: ptInsurance, color: '#F97316' },
+    { label: '固定資產折舊', value: depreciation, color: '#FBBF24' },
+    { label: '房租', value: rent, color: '#A3E635' },
+    { label: '水電 / 清潔', value: utilities, color: '#34D399' },
+  ];
+  const barsEl = document.getElementById('cost_bars');
+  barsEl.innerHTML = '';
+  costItems.forEach(item => {
+    const pct = (item.value / fixedTotal * 100).toFixed(1);
+    barsEl.innerHTML += `
+      <div>
+        <div class="flex justify-between text-sm mb-1.5">
+          <span class="text-stone-600">${item.label}</span>
+          <span class="text-stone-500">${fmt(item.value)} 元 <span class="text-stone-400">(${pct}%)</span></span>
+        </div>
+        <div class="bg-stone-100 rounded-full h-2 overflow-hidden">
+          <div class="h-2 rounded-full transition-all duration-300" style="width:${pct}%; background:${item.color}"></div>
+        </div>
+      </div>
+    `;
+  });
+}
+
+function setScenario(key) {
+  currentScenario = key;
+  ['soft','half','sundae','custom'].forEach(k => {
+    const btn = document.getElementById('btn_' + k);
+    if (k === key) {
+      btn.classList.add('active');
+      btn.classList.remove('text-stone-500', 'border-stone-200');
+      btn.classList.add('border-orange-300');
+    } else {
+      btn.classList.remove('active', 'border-orange-300');
+      btn.classList.add('text-stone-500', 'border-stone-200');
+    }
+  });
+  document.getElementById('custom_slider_row').classList.toggle('hidden', key !== 'custom');
+  calc();
+}
+
+// Init
+calc();
+</script>
+</body>
+</html>
