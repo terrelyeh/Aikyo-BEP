@@ -229,7 +229,7 @@
             <p class="text-sm font-semibold text-stone-600 text-center mb-3">損益平衡時 · 全通路營業額</p>
             <div class="grid grid-cols-3 gap-2 text-center">
               <div class="bg-stone-50 rounded-xl p-3">
-                <p class="text-xs text-stone-400 mb-1">直銷</p>
+                <p class="text-xs text-stone-400 mb-1">直銷（愛嬌新富）</p>
                 <p class="font-bold text-stone-700 text-base" id="b2b_total_direct">—</p>
               </div>
               <div class="bg-purple-50 rounded-xl p-3">
@@ -493,7 +493,7 @@ function calc() {
 
   // BEP display
   document.getElementById('bep_display').textContent = fmt(bep);
-  document.getElementById('bep_fc_label').textContent = b2bEnabled ? '直銷（愛嬌門市）需承擔成本' : '固定成本';
+  document.getElementById('bep_fc_label').textContent = b2bEnabled ? '直銷（愛嬌）需承擔成本' : '固定成本';
   document.getElementById('bep_fixed').textContent = fmt(b2bEnabled ? directFC : fixedTotal);
   document.getElementById('bep_gm').textContent = (gm * 100).toFixed(1) + '%';
 
