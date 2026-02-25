@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow">
   <title>冰店損益平衡分析</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -537,6 +538,11 @@ function calc() {
       plugins: {
         legend: { display: false },
         tooltip: {
+          padding: { x: 16, y: 12 },
+          titleSpacing: 6,
+          bodySpacing: 8,
+          titleFont: { size: 12 },
+          bodyFont: { size: 13 },
           callbacks: {
             title: items => '月營業額：' + revLabels[items[0].dataIndex].toLocaleString('zh-TW') + ' 元',
             label: item => {
