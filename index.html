@@ -29,7 +29,7 @@
     .scenario-btn { transition: all 150ms; }
     .scenario-btn.active { background: #E8744F; color: #fff; }
     .tag { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 99px; }
-    .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #a8a29e; margin-bottom: 1rem; }
+    .section-label { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #78716c; margin-bottom: 1rem; }
     .cost-label { font-size: 13.5px; }
     @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
   </style>
@@ -199,10 +199,10 @@
               <span class="text-sm text-stone-600">PT 勞保 / 勞退公提</span>
               <span class="text-sm text-stone-500" id="pt_insurance_display">1,700 元</span>
             </div>
-            <div class="border-t-2 border-stone-200 pt-3">
+            <div class="rounded-xl px-3 py-3 mt-1" style="background:#F0EBE3; border:1px solid #DDD7CC;">
               <div class="flex items-center justify-between">
-                <span class="text-sm font-bold text-stone-800">固定成本合計</span>
-                <span class="text-sm font-bold text-stone-800" id="total_fixed_display">96,865 元</span>
+                <span class="text-base font-bold text-stone-800">固定成本合計</span>
+                <span class="text-base font-bold text-stone-800" id="total_fixed_display">96,865 元</span>
               </div>
             </div>
           </div>
@@ -632,8 +632,8 @@ function calc() {
     { label: '正職薪資', value: fulltime, color: '#E8744F' },
     { label: 'PT 排班', value: ptCost, color: '#FB923C' },
     { label: 'PT 勞保 / 勞退公提', value: ptInsurance, color: '#F97316' },
-    { label: '固定資產折舊', value: depreciation, color: '#FBBF24' },
     { label: '房租', value: rent, color: '#A3E635' },
+    { label: '固定資產折舊', value: depreciation, color: '#FBBF24' },
     { label: '水電 / 清潔', value: utilities, color: '#34D399' },
   ];
   const barsEl = document.getElementById('cost_bars');
