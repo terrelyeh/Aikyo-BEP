@@ -26,7 +26,24 @@
 </head>
 <body class="min-h-screen">
 
-  <div class="max-w-6xl mx-auto px-6 py-8">
+  <!-- Password Gate -->
+  <div id="pw_gate" class="fixed inset-0 z-50 flex items-center justify-center" style="background:#FDF8F2">
+    <div class="card p-8 w-full max-w-sm text-center" style="box-shadow:0 8px 40px #0000000d">
+      <div class="text-3xl mb-3">🍦</div>
+      <h2 class="text-xl font-bold text-stone-800 mb-1">冰店損益平衡分析</h2>
+      <p class="text-sm text-stone-400 mb-6">請輸入密碼以繼續</p>
+      <input type="password" id="pw_input" placeholder="Password"
+        class="w-full text-center text-lg tracking-widest mb-3"
+        style="border:1px solid #E5E0D8;border-radius:8px;padding:10px 14px;background:#FDF8F2;outline:none"
+        onkeydown="if(event.key==='Enter')checkPW()" />
+      <p id="pw_error" class="text-xs text-red-400 mb-3 hidden">密碼錯誤，請再試一次</p>
+      <button onclick="checkPW()"
+        class="w-full py-2.5 rounded-xl font-semibold text-white transition-colors duration-150"
+        style="background:#E8744F">進入</button>
+    </div>
+  </div>
+
+  <div id="main_content" class="max-w-6xl mx-auto px-6 py-8" style="display:none">
 
     <!-- Header -->
     <div class="mb-10 relative">
@@ -315,6 +332,28 @@
   </div>
 
 <script>
+// Password gate (SHA-256 hash, no plaintext in source)
+const PW_HASH = '04791dc6eea8faa8850cafa65b34829f067549c15ca9b38db1cfe8235ac94b09';
+async function checkPW() {
+  const val = document.getElementById('pw_input').value;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(val));
+  const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  if (hash === PW_HASH) {
+    sessionStorage.setItem('aikyo_auth', '1');
+    document.getElementById('pw_gate').style.display = 'none';
+    document.getElementById('main_content').style.display = 'block';
+    calc();
+  } else {
+    document.getElementById('pw_error').classList.remove('hidden');
+    document.getElementById('pw_input').value = '';
+    document.getElementById('pw_input').focus();
+  }
+}
+if (sessionStorage.getItem('aikyo_auth') === '1') {
+  document.getElementById('pw_gate').style.display = 'none';
+  document.getElementById('main_content').style.display = 'block';
+}
+
 let currentScenario = 'half';
 let chart = null;
 
@@ -622,8 +661,8 @@ function setScenario(key) {
   calc();
 }
 
-// Init
-calc();
+// Init (only run if already authenticated)
+if (sessionStorage.getItem('aikyo_auth') === '1') calc();
 </script>
 </body>
 </html>
