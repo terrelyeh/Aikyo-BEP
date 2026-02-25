@@ -461,19 +461,25 @@ function calc() {
     document.getElementById('b2b_blended_gm').textContent  = (blendedGMRate * 100).toFixed(1) + '%';
     const softContrib   = b2bSoftQty   * priceSoft   * gmSoft   * (1 - B2B_REBATE);
     const sundaeContrib = b2bSundaeQty * priceSundae * gmSundae * (1 - B2B_REBATE);
+    const softRebate    = b2bSoftQty   * priceSoft   * gmSoft   * B2B_REBATE;
+    const sundaeRebate  = b2bSundaeQty * priceSundae * gmSundae * B2B_REBATE;
+    const totalRebate   = softRebate + sundaeRebate;
     document.getElementById('b2b_contrib_display').textContent = fmt(b2bContrib);
     document.getElementById('b2b_impact').innerHTML = `
       <div class="flex justify-between font-semibold">
-        <span>酒場總營業額</span><span class="text-stone-600">${fmt(barRevenue)} 元</span>
+        <span>酒場銷售總營業額</span><span class="text-stone-600">${fmt(barRevenue)} 元</span>
       </div>
       <div class="border-t border-stone-200 mt-1.5 pt-1.5 flex justify-between text-stone-400">
-        <span>🍦 霜淇淋 ${b2bSoftQty} 份 毛利</span><span>+${fmt(softContrib)} 元</span>
+        <span>返利給酒場員工（20%）</span><span class="text-rose-400">−${fmt(totalRebate)} 元</span>
+      </div>
+      <div class="border-t border-stone-200 mt-1.5 pt-1.5 flex justify-between text-stone-400">
+        <span>🍦 霜淇淋 ${b2bSoftQty} 份・愛嬌毛利</span><span>+${fmt(softContrib)} 元</span>
       </div>
       <div class="flex justify-between text-stone-400">
-        <span>🍨 聖代 ${b2bSundaeQty} 份 毛利</span><span>+${fmt(sundaeContrib)} 元</span>
+        <span>🍨 聖代 ${b2bSundaeQty} 份・愛嬌毛利</span><span>+${fmt(sundaeContrib)} 元</span>
       </div>
       <div class="border-t border-stone-200 mt-1.5 pt-1.5 flex justify-between font-semibold">
-        <span>酒場貢獻利潤</span><span class="text-purple-600">+${fmt(b2bContrib)} 元</span>
+        <span>酒場貢獻利潤（愛嬌實得）</span><span class="text-purple-600">+${fmt(b2bContrib)} 元</span>
       </div>
     `;
   } else {
