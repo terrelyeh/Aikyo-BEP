@@ -152,6 +152,10 @@
               <span class="text-base text-stone-600">每日營業時數</span>
               <div class="flex items-center gap-1"><input type="number" id="hours" value="9" min="1" max="16" onchange="calc()" /> <span class="text-sm text-stone-400">小時</span></div>
             </div>
+            <div class="flex items-center justify-between rounded-lg bg-stone-50 px-3 py-2">
+              <span class="text-sm font-semibold text-stone-700">當月總時數</span>
+              <span class="num text-sm font-semibold text-stone-700" id="total_hours_display">216 小時</span>
+            </div>
             <div>
               <div class="flex items-center justify-between mb-1">
                 <span class="text-base text-stone-600">PT cover 比例</span>
@@ -202,10 +206,17 @@
             </div>
             <div class="flex items-center justify-between">
               <span class="text-base text-stone-600">水電 / 清潔</span>
-              <div class="flex items-center gap-1"><input type="number" id="utilities" value="2000" min="0" max="30000" step="100" onchange="calc()" /> <span class="text-sm text-stone-400">元</span></div>
+              <div class="flex items-center gap-1"><input type="number" id="utilities" value="3000" min="0" max="30000" step="100" onchange="calc()" /> <span class="text-sm text-stone-400">元</span></div>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-base text-stone-600">固定資產折舊</span>
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <div class="relative w-9 h-5">
+                  <input type="checkbox" id="depreciation_enabled" class="sr-only" onchange="calc()" checked>
+                  <div class="absolute inset-0 rounded-full transition-colors duration-200" id="dep_track" style="background:#E8744F"></div>
+                  <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200" id="dep_thumb" style="transform:translateX(16px)"></div>
+                </div>
+                <span class="text-base text-stone-600">固定資產折舊</span>
+              </label>
               <div class="flex items-center gap-1"><input type="number" id="depreciation" value="11590" min="0" max="50000" step="100" onchange="calc()" /> <span class="text-sm text-stone-400">元</span></div>
             </div>
             <div class="flex items-center justify-between">
@@ -421,7 +432,8 @@ function calc() {
   const B2B_REBATE  = 0.20;
   const rent        = +document.getElementById('rent').value;
   const utilities   = +document.getElementById('utilities').value;
-  const depreciation= +document.getElementById('depreciation').value;
+  const depEnabled  = document.getElementById('depreciation_enabled').checked;
+  const depreciation= depEnabled ? +document.getElementById('depreciation').value : 0;
   const fulltime    = +document.getElementById('fulltime').value;
   const varCostRate = +document.getElementById('var_cost_pct').value / 100;
   const targetProfit= +document.getElementById('target_profit').value;
@@ -473,6 +485,7 @@ function calc() {
   document.getElementById('gm_soft_display').textContent   = Math.round(gmSoft * 100) + '%';
   document.getElementById('gm_sundae_display').textContent = Math.round(gmSundae * 100) + '%';
   document.getElementById('pt_pct_display').textContent = Math.round(ptPct * 100) + '%';
+  document.getElementById('total_hours_display').textContent = fmt(totalHours) + ' 小時';
   document.getElementById('pt_cost_display').textContent = fmt(ptCost) + ' 元';
   document.getElementById('pt_hours_display').textContent = fmtDec(ptHours, 1) + ' 小時 × ' + ptWage + ' 元';
   document.getElementById('pt_insurance_display').textContent = fmt(ptInsurance) + ' 元';
@@ -505,20 +518,20 @@ function calc() {
     const totalRebate   = softRebate + sundaeRebate;
     document.getElementById('b2b_contrib_display').textContent = fmt(b2bContrib);
     document.getElementById('b2b_impact').innerHTML = `
-      <div class="flex justify-between font-semibold">
-        <span>酒場銷售總營業額</span><span class="text-stone-600">${fmt(barRevenue)} 元</span>
+      <div class="flex justify-between items-center font-bold text-base text-stone-700">
+        <span>酒場銷售總營業額</span><span class="num">${fmt(barRevenue)} 元</span>
       </div>
       <div class="border-t border-stone-200 mt-1.5 pt-1.5 flex justify-between text-stone-400">
-        <span>返利給酒場員工（20%）</span><span class="text-rose-400">−${fmt(totalRebate)} 元</span>
+        <span>返利給酒場員工（20%）</span><span class="text-rose-400 num">−${fmt(totalRebate)} 元</span>
       </div>
       <div class="border-t border-stone-200 mt-1.5 pt-1.5 flex justify-between text-stone-400">
-        <span>🍦 霜淇淋 ${b2bSoftQty} 份・愛嬌毛利</span><span>+${fmt(softContrib)} 元</span>
+        <span>🍦 霜淇淋 ${b2bSoftQty} 份・愛嬌毛利</span><span class="num">+${fmt(softContrib)} 元</span>
       </div>
       <div class="flex justify-between text-stone-400">
-        <span>🍨 聖代 ${b2bSundaeQty} 份・愛嬌毛利</span><span>+${fmt(sundaeContrib)} 元</span>
+        <span>🍨 聖代 ${b2bSundaeQty} 份・愛嬌毛利</span><span class="num">+${fmt(sundaeContrib)} 元</span>
       </div>
-      <div class="border-t border-stone-200 mt-1.5 pt-1.5 flex justify-between font-semibold">
-        <span>酒場貢獻利潤（毛利）</span><span class="text-purple-600">+${fmt(b2bContrib)} 元</span>
+      <div class="border-t border-stone-200 mt-1.5 pt-1.5 flex justify-between items-center font-bold text-base">
+        <span class="text-purple-700">酒場貢獻利潤（毛利）</span><span class="text-purple-600 num">+${fmt(b2bContrib)} 元</span>
       </div>
     `;
   } else {
@@ -529,6 +542,22 @@ function calc() {
     b2bTotalRow.classList.add('hidden');
   }
   document.getElementById('total_fixed_display').textContent = fmt(fixedTotal) + ' 元';
+
+  // Depreciation toggle visual + input state
+  const depTrack = document.getElementById('dep_track');
+  const depThumb = document.getElementById('dep_thumb');
+  const depInput = document.getElementById('depreciation');
+  if (depEnabled) {
+    depTrack.style.background = '#E8744F';
+    depThumb.style.transform = 'translateX(16px)';
+    depInput.disabled = false;
+    depInput.style.opacity = '1';
+  } else {
+    depTrack.style.background = '#d1d5db';
+    depThumb.style.transform = '';
+    depInput.disabled = true;
+    depInput.style.opacity = '0.4';
+  }
 
   // BEP display — badge, number, formula, reset button
   document.getElementById('reset_profit').classList.toggle('hidden', targetProfit <= 0);
