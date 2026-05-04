@@ -1,10 +1,10 @@
 # CLAUDE.md — Project Context
 
-> Last updated: 2026-05-04
+> Last updated: 2026-05-04（CMS 功能上線）
 
 ## Project Overview
 
-愛嬌冰店（Aikyo）的**互動式損益平衡分析工具**。純前端單檔應用，讓經營團隊掌握固定成本結構、找到損益平衡點（BEP），並以此為 baseline 規劃盈利策略。部署在 Vercel（https://aikyo-bep.vercel.app），有密碼閘門保護。
+愛嬌冰店（Aikyo）的**互動式損益平衡分析工具**。單頁 HTML + 一個 Vercel serverless function，讓經營團隊掌握固定成本結構、找到損益平衡點（BEP），並以此為 baseline 規劃盈利策略。部署在 Vercel（https://aikyo-bep.vercel.app），有密碼閘門保護。功能清單與產品定位詳見 [README.md](README.md)。
 
 ## Tech Stack
 
@@ -97,23 +97,9 @@
 
 ## Current Status
 
-### Completed
+功能清單詳見 [README.md](README.md)。
 
-- 基礎 BEP 計算（產品設定 × 營運設定 × 固定成本）
-- 酒場 B2B 通路模擬（選用，toggle 開關，返利 20%）
-- 損益敏感度折線圖（Chart.js，綠/紅漸層）
-- 固定成本結構長條圖
-- 多情境對比（動態：每品項一顆 + 平均混合 + 自訂）
-- 目標利潤模式（輸入目標月利潤 → 反推所需營業額，badge 橘→綠切換）
-- 變動成本率 slider（0-30%，含可收合的參考區間）
-- Reset 按鈕（卡片右上角，目標利潤 > 0 時出現）
-- 密碼閘門（SHA-256）
-- 所有數字 Inter 字體 + tabular-nums
-- 結果卡片立體化（多層 shadow）
-- 折舊 toggle（可整項排除）
-- 品項 CMS：動態 1–5 品項（`items.json` + `/api/save-items`，密碼驗證後 commit 回 GitHub）
-
-### Pending / Ideas
+### 🔜 Next Steps
 
 - 參數快照 / 情境對比（保守版 vs 樂觀版並排）
 - 匯出為圖片 / PDF
@@ -139,4 +125,3 @@ git push origin main
 - **CMS 認證流程**：login 時把原始密碼存 `sessionStorage.aikyo_pw`，存檔時 POST 給 serverless function；function 用 GitHub PAT (`GITHUB_TOKEN` env) 寫 `items.json` 回 main，會觸發 Vercel 自動部署 → 頁面下次 reload 才會看到新值
 - **舊 session 無密碼**：CMS 上線前的 session 沒存 `aikyo_pw`，bootstrap 會自動清掉 `aikyo_auth` 強制重新登入，避免存檔時 401
 - **Chart.js 的 borderColor 用 function 而非固定值**：因為要做綠紅漸層切換，如果改成固定色會失去效果
-- **README.md 的注意事項還提到「外送平台抽成」**：已從頁面移除（因為沒有外送平台），但 README 尚未同步更新
