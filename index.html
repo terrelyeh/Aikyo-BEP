@@ -76,38 +76,14 @@
 
         <!-- 產品設定 -->
         <div class="card p-5">
-          <p class="section-label">產品設定</p>
-          <div class="space-y-3">
-
-            <!-- 霜淇淋 -->
-            <div class="flex items-center justify-between">
-              <span class="text-base text-stone-600">🍦 霜淇淋售價</span>
-              <div class="flex items-center gap-1"><input type="number" id="price_soft" value="150" min="50" max="500" onchange="calc()" /> <span class="text-sm text-stone-400">元</span></div>
-            </div>
-            <div class="pl-4 border-l-2 border-orange-100">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-sm text-stone-500">毛利率</span>
-                <span class="num text-sm font-semibold text-orange-500" id="gm_soft_display">62%</span>
-              </div>
-              <input type="range" id="gm_soft" min="30" max="90" value="62" step="1" oninput="calc()" class="w-full cursor-pointer" />
-            </div>
-
-            <div class="border-t border-stone-100"></div>
-
-            <!-- 聖代 -->
-            <div class="flex items-center justify-between">
-              <span class="text-base text-stone-600">🍨 聖代售價</span>
-              <div class="flex items-center gap-1"><input type="number" id="price_sundae" value="250" min="50" max="500" onchange="calc()" /> <span class="text-sm text-stone-400">元</span></div>
-            </div>
-            <div class="pl-4 border-l-2 border-amber-100">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-sm text-stone-500">毛利率</span>
-                <span class="num text-sm font-semibold text-amber-500" id="gm_sundae_display">65%</span>
-              </div>
-              <input type="range" id="gm_sundae" min="30" max="90" value="65" step="1" oninput="calc()" class="w-full cursor-pointer" style="accent-color:#F59E0B" />
-            </div>
-
+          <div class="flex items-center justify-between mb-4">
+            <p class="section-label" style="margin-bottom:0">產品設定</p>
+            <button onclick="openItemsModal()" class="flex items-center gap-1 text-xs text-stone-500 hover:text-orange-600 border border-stone-200 hover:border-orange-300 rounded-full px-2.5 py-1 transition-colors duration-150 cursor-pointer" title="編輯品項">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              編輯品項
+            </button>
           </div>
+          <div id="items_container" class="space-y-3"></div>
         </div>
 
         <!-- 通路設定 -->
@@ -128,14 +104,7 @@
               <p class="text-xs font-semibold text-purple-700 mb-0.5">🍻 酒場員工推銷返利 20%</p>
               <p class="text-xs text-stone-400 leading-relaxed">酒場每賣一份，返還 20% 毛利給酒場。填入預計月售量，計算酒場貢獻可抵多少固定成本。</p>
             </div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-stone-600">🍦 霜淇淋月售量</span>
-              <div class="flex items-center gap-1"><input type="number" id="b2b_soft_qty" value="150" min="0" max="999" onchange="calc()" /> <span class="text-sm text-stone-400">份</span></div>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-stone-600">🍨 聖代月售量</span>
-              <div class="flex items-center gap-1"><input type="number" id="b2b_sundae_qty" value="80" min="0" max="999" onchange="calc()" /> <span class="text-sm text-stone-400">份</span></div>
-            </div>
+            <div id="b2b_qty_container" class="space-y-3"></div>
             <div class="rounded-lg bg-stone-50 px-3 py-2.5 text-xs text-stone-500 space-y-1.5" id="b2b_impact"></div>
           </div>
         </div>
@@ -266,23 +235,25 @@
           <div id="b2b_contrib_row" class="hidden mt-2 flex justify-center">
             <span class="text-xs text-purple-600 bg-purple-50 rounded-full px-3 py-1">🍻 酒場月貢獻 <span id="b2b_contrib_display">0</span> 元（利潤）已抵固定成本</span>
           </div>
-          <div id="b2b_total_row" class="hidden mt-5 pt-5 border-t-2 border-stone-100">
-            <p class="text-sm font-semibold text-stone-600 text-center mb-3" id="b2b_total_label">損益平衡時 · 全通路營業額</p>
+          <div id="b2b_total_row" class="hidden mt-6 -mx-6 -mb-6 px-5 py-5 rounded-b-2xl" style="background:#F5F0E8; border-top:1px dashed #D4CCBE;">
+            <div class="flex items-center justify-center mb-3">
+              <span class="text-xs font-bold tracking-wide text-stone-500 bg-white border border-stone-200 rounded-full px-3 py-1" id="b2b_total_label">損益平衡時 · 全通路營業額</span>
+            </div>
             <div class="grid grid-cols-3 gap-2 text-center">
-              <div class="bg-stone-50 rounded-xl p-3">
+              <div class="bg-white rounded-xl p-3 border border-stone-200">
                 <p class="text-xs text-stone-400 mb-1">直銷（愛嬌新富）</p>
                 <p class="num font-bold text-stone-700 text-base" id="b2b_total_direct">—</p>
               </div>
-              <div class="bg-purple-50 rounded-xl p-3">
-                <p class="text-xs text-purple-400 mb-1">🍻 酒場</p>
+              <div class="bg-white rounded-xl p-3 border border-purple-200">
+                <p class="text-xs text-purple-500 mb-1">🍻 酒場</p>
                 <p class="num font-bold text-purple-600 text-base" id="b2b_total_bar">—</p>
               </div>
-              <div class="bg-orange-50 rounded-xl p-3">
-                <p class="text-xs text-orange-400 mb-1">合計</p>
+              <div class="bg-white rounded-xl p-3 border border-orange-200">
+                <p class="text-xs text-orange-500 mb-1">合計</p>
                 <p class="num font-bold text-orange-600 text-base" id="b2b_total_all">—</p>
               </div>
             </div>
-            <div class="mt-3 flex justify-between items-center bg-stone-100 rounded-xl px-4 py-3">
+            <div class="mt-3 flex justify-between items-center bg-white border border-stone-200 rounded-xl px-4 py-3">
               <span class="text-sm font-medium text-stone-500">全通路綜合毛利率</span>
               <span class="num text-xl font-bold text-stone-700" id="b2b_blended_gm">—</span>
             </div>
@@ -291,26 +262,19 @@
 
         <!-- 品項情境 -->
         <div class="card result-card p-5">
-          <div class="flex items-center justify-between mb-4">
-            <p class="section-label">銷量目標情境</p>
-            <div class="flex flex-wrap gap-1.5">
-              <button class="scenario-btn text-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500" onclick="setScenario('soft')" id="btn_soft">全霜淇淋</button>
-              <button class="scenario-btn active text-sm px-3 py-1.5 rounded-full border border-orange-200" onclick="setScenario('half')" id="btn_half">各半</button>
-              <button class="scenario-btn text-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500" onclick="setScenario('sundae')" id="btn_sundae">全聖代</button>
-              <button class="scenario-btn text-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500" onclick="setScenario('custom')" id="btn_custom">自訂</button>
-            </div>
+          <div class="flex items-start justify-between gap-3 mb-4 flex-wrap">
+            <p class="section-label flex-shrink-0" style="margin-bottom:0">銷量目標情境</p>
+            <div id="scenario_buttons" class="flex flex-wrap gap-1.5 justify-end"></div>
           </div>
 
-          <!-- 自訂比例 slider -->
+          <!-- 自訂比例 -->
           <div id="custom_slider_row" class="hidden mb-4 bg-stone-50 rounded-xl px-4 py-3">
-            <div class="flex justify-between text-sm font-semibold mb-2">
-              <span class="text-orange-500">🍦 霜淇淋 <span id="custom_soft_label">50</span>%</span>
-              <span class="text-amber-500">🍨 聖代 <span id="custom_sundae_label">50</span>%</span>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-semibold text-stone-600">自訂品項組合比例</span>
+              <button onclick="resetCustomMix()" class="text-xs text-stone-400 hover:text-orange-500 underline cursor-pointer">平均</button>
             </div>
-            <input type="range" id="custom_sundae_pct" min="0" max="100" value="50" step="5" oninput="calc()" class="w-full cursor-pointer" />
-            <div class="flex justify-between text-xs text-stone-400 mt-1.5">
-              <span>全霜淇淋</span><span>各半</span><span>全聖代</span>
-            </div>
+            <div id="custom_mix_inputs" class="space-y-2"></div>
+            <div id="custom_mix_total" class="text-xs text-stone-400 mt-2 text-right"></div>
           </div>
 
           <div class="grid grid-cols-3 gap-3 mb-5">
@@ -382,6 +346,30 @@
     </div>
   </div>
 
+  <!-- Edit Items Modal -->
+  <div id="items_modal" class="fixed inset-0 z-40 flex items-center justify-center hidden" style="background:rgba(28,28,30,0.4); backdrop-filter:blur(2px)" onclick="if(event.target===this)closeItemsModal()">
+    <div class="card p-6 w-full max-w-lg mx-4" style="box-shadow:0 24px 48px rgba(0,0,0,0.18); max-height:90vh; overflow-y:auto;">
+      <div class="flex items-center justify-between mb-1">
+        <h3 class="text-lg font-bold text-stone-800">編輯品項</h3>
+        <button onclick="closeItemsModal()" class="text-stone-400 hover:text-stone-700 text-2xl leading-none cursor-pointer" aria-label="關閉">×</button>
+      </div>
+      <p class="text-xs text-stone-400 mb-4">最多 5 個品項。儲存後會 commit 到 GitHub repo。</p>
+      <div id="modal_items_list" class="space-y-3 mb-4"></div>
+      <button onclick="addItemRow()" id="modal_add_btn" class="w-full py-2 rounded-xl text-sm font-semibold text-stone-600 border border-dashed border-stone-300 hover:border-orange-300 hover:text-orange-600 hover:bg-orange-50 transition-colors duration-150 cursor-pointer mb-4">+ 新增品項</button>
+      <p id="modal_error" class="text-xs text-red-500 mb-3 hidden"></p>
+      <div class="flex gap-2 justify-end pt-3 border-t border-stone-100">
+        <button onclick="closeItemsModal()" class="px-4 py-2 rounded-xl text-sm font-semibold text-stone-500 hover:text-stone-700 hover:bg-stone-100 transition-colors duration-150 cursor-pointer">取消</button>
+        <button onclick="saveItemsToGitHub()" id="modal_save_btn" class="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-colors duration-150 cursor-pointer flex items-center gap-2" style="background:#E8744F">
+          <span id="modal_save_spinner" class="hidden inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+          <span id="modal_save_label">💾 儲存到 GitHub</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-lg" style="background:#10B981"></div>
+
 <script>
 // Password gate (SHA-256 hash, no plaintext in source)
 const PW_HASH = '04791dc6eea8faa8850cafa65b34829f067549c15ca9b38db1cfe8235ac94b09';
@@ -391,38 +379,197 @@ async function checkPW() {
   const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
   if (hash === PW_HASH) {
     sessionStorage.setItem('aikyo_auth', '1');
+    sessionStorage.setItem('aikyo_pw', val);
     document.getElementById('pw_gate').style.display = 'none';
     document.getElementById('main_content').style.display = 'block';
-    calc();
+    bootstrap();
   } else {
     document.getElementById('pw_error').classList.remove('hidden');
     document.getElementById('pw_input').value = '';
     document.getElementById('pw_input').focus();
   }
 }
-if (sessionStorage.getItem('aikyo_auth') === '1') {
+if (sessionStorage.getItem('aikyo_auth') === '1' && sessionStorage.getItem('aikyo_pw')) {
   document.getElementById('pw_gate').style.display = 'none';
   document.getElementById('main_content').style.display = 'block';
+} else {
+  // Old session without password (pre-CMS) — force re-login so /api/save-items can authenticate
+  sessionStorage.removeItem('aikyo_auth');
 }
 
-let currentScenario = 'half';
+// ========= ITEMS (CMS-backed) =========
+const ITEM_COLORS = [
+  { hex: '#E8744F', tw: 'orange' },
+  { hex: '#F59E0B', tw: 'amber'  },
+  { hex: '#10B981', tw: 'emerald'},
+  { hex: '#3B82F6', tw: 'blue'   },
+  { hex: '#9333EA', tw: 'purple' },
+];
+const MAX_ITEMS = 5;
+
+let items = [
+  { name: '🍦 霜淇淋', price: 150, gm: 62 },
+  { name: '🍨 聖代',   price: 250, gm: 65 },
+];
+let b2bQty   = items.map(() => 0);
+let customMix = items.map(() => 0);
+let currentScenario = 'avg';
 let chart = null;
+let editItems = [];
 
 function fmt(n) { return Math.round(n).toLocaleString('zh-TW'); }
 function fmtDec(n, d=2) { return n.toFixed(d); }
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
-function blendedGM(priceSoft, priceSundae, gmSoft, gmSundae, key) {
-  if (key === 'soft')   return gmSoft;
-  if (key === 'sundae') return gmSundae;
-  // 各半（by units）→ 以營收加權
-  return (priceSoft * gmSoft + priceSundae * gmSundae) / (priceSoft + priceSundae);
+async function bootstrap() {
+  try {
+    const r = await fetch('items.json?t=' + Date.now(), { cache: 'no-store' });
+    if (r.ok) {
+      const data = await r.json();
+      if (Array.isArray(data.items) && data.items.length > 0) {
+        items = data.items.slice(0, MAX_ITEMS);
+      }
+    }
+  } catch (_) { /* fall back to defaults */ }
+  syncRuntimeArrays();
+  renderItems();
+  renderB2BQty();
+  renderScenarioButtons();
+  renderCustomMix();
+  calc();
 }
 
+function syncRuntimeArrays() {
+  b2bQty   = items.map((_, i) => b2bQty[i]   != null ? b2bQty[i]   : 0);
+  customMix = items.map((_, i) => customMix[i] != null ? customMix[i] : 0);
+  if (customMix.every(v => v === 0)) customMix = items.map(() => Math.round(100 / items.length));
+  if (currentScenario.startsWith('item_')) {
+    const idx = +currentScenario.slice(5);
+    if (idx >= items.length) currentScenario = 'avg';
+  }
+}
+
+function renderItems() {
+  const container = document.getElementById('items_container');
+  container.innerHTML = items.map((it, i) => {
+    const c = ITEM_COLORS[i % ITEM_COLORS.length];
+    return `
+      <div${i > 0 ? ' class="pt-3 border-t border-stone-100"' : ''}>
+        <div class="flex items-center justify-between">
+          <span class="text-base text-stone-600">${escapeHtml(it.name)} 售價</span>
+          <div class="flex items-center gap-1"><input type="number" id="price_${i}" value="${it.price}" min="10" max="10000" onchange="onItemPriceChange(${i})" /> <span class="text-sm text-stone-400">元</span></div>
+        </div>
+        <div class="pl-4 mt-2" style="border-left:2px solid ${c.hex}33">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-sm text-stone-500">毛利率</span>
+            <span class="num text-sm font-semibold" id="gm_display_${i}" style="color:${c.hex}">${it.gm}%</span>
+          </div>
+          <input type="range" id="gm_${i}" min="0" max="100" value="${it.gm}" step="1" oninput="onItemGmChange(${i})" class="w-full cursor-pointer" style="accent-color:${c.hex}" />
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function onItemPriceChange(i) {
+  items[i].price = +document.getElementById('price_' + i).value;
+  calc();
+}
+function onItemGmChange(i) {
+  items[i].gm = +document.getElementById('gm_' + i).value;
+  document.getElementById('gm_display_' + i).textContent = items[i].gm + '%';
+  calc();
+}
+
+function renderB2BQty() {
+  const container = document.getElementById('b2b_qty_container');
+  container.innerHTML = items.map((it, i) => `
+    <div class="flex items-center justify-between">
+      <span class="text-sm text-stone-600">${escapeHtml(it.name)} 月售量</span>
+      <div class="flex items-center gap-1"><input type="number" id="b2b_qty_${i}" value="${b2bQty[i] || 0}" min="0" max="9999" onchange="onB2BQtyChange(${i})" /> <span class="text-sm text-stone-400">份</span></div>
+    </div>
+  `).join('');
+}
+function onB2BQtyChange(i) {
+  b2bQty[i] = +document.getElementById('b2b_qty_' + i).value;
+  calc();
+}
+
+function renderScenarioButtons() {
+  const container = document.getElementById('scenario_buttons');
+  const btns = items.map((it, i) =>
+    `<button class="scenario-btn text-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500" onclick="setScenario('item_${i}')" id="btn_item_${i}">全${escapeHtml(stripEmoji(it.name))}</button>`
+  );
+  btns.push(`<button class="scenario-btn active text-sm px-3 py-1.5 rounded-full border border-orange-300" onclick="setScenario('avg')" id="btn_avg">平均混合</button>`);
+  btns.push(`<button class="scenario-btn text-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500" onclick="setScenario('custom')" id="btn_custom">自訂</button>`);
+  container.innerHTML = btns.join('');
+  highlightScenario();
+}
+
+function highlightScenario() {
+  const allKeys = items.map((_, i) => 'item_' + i).concat(['avg', 'custom']);
+  allKeys.forEach(k => {
+    const btn = document.getElementById('btn_' + k);
+    if (!btn) return;
+    if (k === currentScenario) {
+      btn.classList.add('active', 'border-orange-300');
+      btn.classList.remove('text-stone-500', 'border-stone-200');
+    } else {
+      btn.classList.remove('active', 'border-orange-300');
+      btn.classList.add('text-stone-500', 'border-stone-200');
+    }
+  });
+}
+
+function renderCustomMix() {
+  const container = document.getElementById('custom_mix_inputs');
+  container.innerHTML = items.map((it, i) => {
+    const c = ITEM_COLORS[i % ITEM_COLORS.length];
+    return `
+      <div class="flex items-center justify-between gap-2">
+        <span class="text-sm flex-1 truncate" style="color:${c.hex}">${escapeHtml(it.name)}</span>
+        <input type="number" id="mix_${i}" value="${customMix[i] || 0}" min="0" max="100" step="5" onchange="onCustomMixChange(${i})" style="width:72px" />
+        <span class="text-xs text-stone-400">%</span>
+      </div>
+    `;
+  }).join('');
+  updateCustomMixTotal();
+}
+function onCustomMixChange(i) {
+  customMix[i] = +document.getElementById('mix_' + i).value;
+  updateCustomMixTotal();
+  calc();
+}
+function updateCustomMixTotal() {
+  const sum = customMix.reduce((a, b) => a + (+b || 0), 0);
+  const el = document.getElementById('custom_mix_total');
+  if (sum === 100) {
+    el.innerHTML = `<span class="text-emerald-600 font-semibold">總和 100% ✓</span>`;
+  } else if (sum === 0) {
+    el.innerHTML = `<span class="text-rose-500">總和 0% — 請輸入比例</span>`;
+  } else {
+    el.innerHTML = `<span class="text-stone-500">總和 ${sum}% · 計算時會自動正規化為 100%</span>`;
+  }
+}
+function resetCustomMix() {
+  const even = Math.round(100 / items.length);
+  customMix = items.map(() => even);
+  // Adjust last to make sum exactly 100
+  const diff = 100 - customMix.reduce((a, b) => a + b, 0);
+  customMix[customMix.length - 1] += diff;
+  renderCustomMix();
+  calc();
+}
+
+function stripEmoji(s) {
+  return String(s).replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim();
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ========= MAIN CALC =========
 function calc() {
-  const priceSoft   = +document.getElementById('price_soft').value;
-  const priceSundae = +document.getElementById('price_sundae').value;
-  const gmSoft      = +document.getElementById('gm_soft').value / 100;
-  const gmSundae    = +document.getElementById('gm_sundae').value / 100;
   const days        = +document.getElementById('days').value;
   const hours       = +document.getElementById('hours').value;
   const ptPct       = +document.getElementById('pt_pct').value / 100;
@@ -448,27 +595,32 @@ function calc() {
   const fixedTotal = rent + utilities + depreciation + fulltime + ptCost + ptInsurance;
 
   // B2B bar contribution (gross profit × 80% after 20% rebate)
-  const b2bSoftQty   = b2bEnabled ? +document.getElementById('b2b_soft_qty').value : 0;
-  const b2bSundaeQty = b2bEnabled ? +document.getElementById('b2b_sundae_qty').value : 0;
-  const b2bContrib   = b2bSoftQty   * priceSoft   * gmSoft   * (1 - B2B_REBATE)
-                     + b2bSundaeQty * priceSundae * gmSundae * (1 - B2B_REBATE);
-  const directFC     = Math.max(0, fixedTotal - b2bContrib);
+  const b2bQtyEff = items.map((_, i) => b2bEnabled ? (b2bQty[i] || 0) : 0);
+  const b2bContribPer = items.map((it, i) =>
+    b2bQtyEff[i] * it.price * (it.gm / 100) * (1 - B2B_REBATE)
+  );
+  const b2bContrib = b2bContribPer.reduce((a, b) => a + b, 0);
+  const directFC   = Math.max(0, fixedTotal - b2bContrib);
 
-  // Scenarios: BEP is for direct sales only (bar contribution already offsets FC)
-  const scenarios = [
-    { label: '全霜淇淋', price: priceSoft,                       key: 'soft',   gm: blendedGM(priceSoft, priceSundae, gmSoft, gmSundae, 'soft') },
-    { label: '各半',     price: (priceSoft + priceSundae) / 2,   key: 'half',   gm: blendedGM(priceSoft, priceSundae, gmSoft, gmSundae, 'half') },
-    { label: '全聖代',   price: priceSundae,                      key: 'sundae', gm: blendedGM(priceSoft, priceSundae, gmSoft, gmSundae, 'sundae') },
-  ];
-  if (currentScenario === 'custom') {
-    const sundaePct   = +document.getElementById('custom_sundae_pct').value / 100;
-    const softPct     = 1 - sundaePct;
-    const customPrice = softPct * priceSoft + sundaePct * priceSundae;
-    const customGM    = (softPct * priceSoft * gmSoft + sundaePct * priceSundae * gmSundae) / customPrice;
-    scenarios.push({ label: '自訂', price: customPrice, key: 'custom', gm: customGM });
-    document.getElementById('custom_soft_label').textContent   = Math.round(softPct * 100);
-    document.getElementById('custom_sundae_label').textContent = Math.round(sundaePct * 100);
-  }
+  // Scenarios — one per item, plus 平均混合 and 自訂
+  const scenarios = items.map((it, i) => ({
+    label: '全' + stripEmoji(it.name),
+    price: it.price,
+    key:   'item_' + i,
+    gm:    it.gm / 100,
+  }));
+  // 平均混合 — equal units, revenue-weighted GM
+  const avgPrice = items.reduce((a, it) => a + it.price, 0) / items.length;
+  const avgGM    = items.reduce((a, it) => a + it.price * (it.gm / 100), 0)
+                 / items.reduce((a, it) => a + it.price, 0);
+  scenarios.push({ label: '平均混合', price: avgPrice, key: 'avg', gm: avgGM });
+  // 自訂 — user-defined unit mix
+  const mixSum = customMix.reduce((a, b) => a + (+b || 0), 0) || 1;
+  const mixNorm = customMix.map(v => (+v || 0) / mixSum);
+  const customPrice = items.reduce((a, it, i) => a + mixNorm[i] * it.price, 0) || 1;
+  const customGM    = items.reduce((a, it, i) => a + mixNorm[i] * it.price * (it.gm / 100), 0) / customPrice;
+  scenarios.push({ label: '自訂', price: customPrice, key: 'custom', gm: customGM });
+
   scenarios.forEach(s => {
     const effectiveGM = s.gm - varCostRate;
     s.effectiveGM = effectiveGM;
@@ -482,8 +634,6 @@ function calc() {
 
   // Update controls display
   document.getElementById('var_cost_display').textContent = Math.round(varCostRate * 100) + '%';
-  document.getElementById('gm_soft_display').textContent   = Math.round(gmSoft * 100) + '%';
-  document.getElementById('gm_sundae_display').textContent = Math.round(gmSundae * 100) + '%';
   document.getElementById('pt_pct_display').textContent = Math.round(ptPct * 100) + '%';
   document.getElementById('total_hours_display').textContent = fmt(totalHours) + ' 小時';
   document.getElementById('pt_cost_display').textContent = fmt(ptCost) + ' 元';
@@ -504,19 +654,21 @@ function calc() {
     b2bTotalRow.classList.remove('hidden');
     document.getElementById('b2b_total_label').textContent = targetProfit > 0
       ? '目標達成時 · 全通路營業額' : '損益平衡時 · 全通路營業額';
-    const barRevenue   = b2bSoftQty * priceSoft + b2bSundaeQty * priceSundae;
+    const barRevenue   = items.reduce((a, it, i) => a + b2bQtyEff[i] * it.price, 0);
     const totalRevenue = bep + barRevenue;
     document.getElementById('b2b_total_direct').textContent = fmt(bep) + ' 元';
     document.getElementById('b2b_total_bar').textContent    = fmt(barRevenue) + ' 元';
     document.getElementById('b2b_total_all').textContent    = fmt(totalRevenue) + ' 元';
-    const blendedGMRate = fixedTotal / totalRevenue;
+    const blendedGMRate = totalRevenue > 0 ? fixedTotal / totalRevenue : 0;
     document.getElementById('b2b_blended_gm').textContent  = (blendedGMRate * 100).toFixed(1) + '%';
-    const softContrib   = b2bSoftQty   * priceSoft   * gmSoft   * (1 - B2B_REBATE);
-    const sundaeContrib = b2bSundaeQty * priceSundae * gmSundae * (1 - B2B_REBATE);
-    const softRebate    = b2bSoftQty   * priceSoft   * gmSoft   * B2B_REBATE;
-    const sundaeRebate  = b2bSundaeQty * priceSundae * gmSundae * B2B_REBATE;
-    const totalRebate   = softRebate + sundaeRebate;
+    const totalRebate = items.reduce((a, it, i) =>
+      a + b2bQtyEff[i] * it.price * (it.gm / 100) * B2B_REBATE, 0);
     document.getElementById('b2b_contrib_display').textContent = fmt(b2bContrib);
+    const itemRows = items.map((it, i) => `
+      <div class="flex justify-between text-stone-400">
+        <span>${escapeHtml(it.name)} ${b2bQtyEff[i]} 份・愛嬌毛利</span><span class="num">+${fmt(b2bContribPer[i])} 元</span>
+      </div>
+    `).join('');
     document.getElementById('b2b_impact').innerHTML = `
       <div class="flex justify-between items-center font-bold text-base text-stone-700">
         <span>酒場銷售總營業額</span><span class="num">${fmt(barRevenue)} 元</span>
@@ -524,12 +676,7 @@ function calc() {
       <div class="border-t border-stone-200 mt-1.5 pt-1.5 flex justify-between text-stone-400">
         <span>返利給酒場員工（20%）</span><span class="text-rose-400 num">−${fmt(totalRebate)} 元</span>
       </div>
-      <div class="border-t border-stone-200 mt-1.5 pt-1.5 flex justify-between text-stone-400">
-        <span>🍦 霜淇淋 ${b2bSoftQty} 份・愛嬌毛利</span><span class="num">+${fmt(softContrib)} 元</span>
-      </div>
-      <div class="flex justify-between text-stone-400">
-        <span>🍨 聖代 ${b2bSundaeQty} 份・愛嬌毛利</span><span class="num">+${fmt(sundaeContrib)} 元</span>
-      </div>
+      <div class="border-t border-stone-200 mt-1.5 pt-1.5 space-y-1">${itemRows}</div>
       <div class="border-t border-stone-200 mt-1.5 pt-1.5 flex justify-between items-center font-bold text-base">
         <span class="text-purple-700">酒場貢獻利潤（毛利）</span><span class="text-purple-600 num">+${fmt(b2bContrib)} 元</span>
       </div>
@@ -599,7 +746,7 @@ function calc() {
     tr.innerHTML = `
       <td class="py-2 pr-3 font-medium ${isActive ? 'text-orange-700' : 'text-stone-600'}">${s.label}</td>
       <td class="num py-2 pr-3 text-right text-stone-400">${(s.effectiveGM*100).toFixed(1)}%</td>
-      <td class="num py-2 pr-3 text-right text-stone-500">${s.price} 元</td>
+      <td class="num py-2 pr-3 text-right text-stone-500">${fmt(s.price)} 元</td>
       <td class="num py-2 pr-3 text-right font-semibold ${isActive ? 'text-orange-700' : 'text-stone-700'}">${fmt(monthly)}</td>
       <td class="num py-2 pr-3 text-right font-semibold ${isActive ? 'text-orange-700' : 'text-stone-700'}">${fmt(daily)}</td>
       <td class="num py-2 text-right font-semibold ${isActive ? 'text-orange-700' : 'text-stone-700'}">${fmtDec(hourly, 2)}</td>
@@ -752,23 +899,125 @@ function calc() {
 
 function setScenario(key) {
   currentScenario = key;
-  ['soft','half','sundae','custom'].forEach(k => {
-    const btn = document.getElementById('btn_' + k);
-    if (k === key) {
-      btn.classList.add('active');
-      btn.classList.remove('text-stone-500', 'border-stone-200');
-      btn.classList.add('border-orange-300');
-    } else {
-      btn.classList.remove('active', 'border-orange-300');
-      btn.classList.add('text-stone-500', 'border-stone-200');
-    }
-  });
+  highlightScenario();
   document.getElementById('custom_slider_row').classList.toggle('hidden', key !== 'custom');
   calc();
 }
 
+// ========= EDIT ITEMS MODAL =========
+function openItemsModal() {
+  editItems = clone(items);
+  renderModalList();
+  document.getElementById('modal_error').classList.add('hidden');
+  document.getElementById('items_modal').classList.remove('hidden');
+}
+function closeItemsModal() {
+  document.getElementById('items_modal').classList.add('hidden');
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !document.getElementById('items_modal').classList.contains('hidden')) {
+    closeItemsModal();
+  }
+});
+function renderModalList() {
+  const list = document.getElementById('modal_items_list');
+  list.innerHTML = editItems.map((it, i) => {
+    const c = ITEM_COLORS[i % ITEM_COLORS.length];
+    return `
+      <div class="rounded-xl border border-stone-200 p-3" style="border-left:3px solid ${c.hex}">
+        <div class="flex items-center gap-2 mb-2">
+          <input type="text" value="${escapeHtml(it.name)}" oninput="editItems[${i}].name=this.value" placeholder="例：🍦 霜淇淋"
+            class="flex-1 text-sm px-3 py-1.5" style="border:1px solid #E5E0D8; border-radius:8px; background:#FDF8F2; outline:none" />
+          <button onclick="removeItemRow(${i})" class="text-stone-400 hover:text-rose-500 px-2 py-1 text-lg leading-none cursor-pointer" title="刪除" ${editItems.length <= 1 ? 'disabled style="opacity:0.3;cursor:not-allowed"' : ''}>✕</button>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-xs text-stone-400 block mb-1">售價（元）</label>
+            <input type="number" value="${it.price}" min="10" max="10000" oninput="editItems[${i}].price=+this.value"
+              class="w-full text-sm" />
+          </div>
+          <div>
+            <label class="text-xs text-stone-400 block mb-1">毛利率（%）</label>
+            <input type="number" value="${it.gm}" min="0" max="100" oninput="editItems[${i}].gm=+this.value"
+              class="w-full text-sm" />
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('modal_add_btn').disabled = editItems.length >= MAX_ITEMS;
+  document.getElementById('modal_add_btn').style.opacity = editItems.length >= MAX_ITEMS ? '0.4' : '1';
+  document.getElementById('modal_add_btn').textContent = editItems.length >= MAX_ITEMS
+    ? `已達上限（${MAX_ITEMS} 個品項）`
+    : '+ 新增品項';
+}
+function addItemRow() {
+  if (editItems.length >= MAX_ITEMS) return;
+  editItems.push({ name: '新品項', price: 100, gm: 60 });
+  renderModalList();
+}
+function removeItemRow(i) {
+  if (editItems.length <= 1) return;
+  editItems.splice(i, 1);
+  renderModalList();
+}
+function showModalError(msg) {
+  const el = document.getElementById('modal_error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+function setSaveBtnLoading(loading) {
+  document.getElementById('modal_save_btn').disabled = loading;
+  document.getElementById('modal_save_spinner').classList.toggle('hidden', !loading);
+  document.getElementById('modal_save_label').textContent = loading ? '儲存中…' : '💾 儲存到 GitHub';
+}
+async function saveItemsToGitHub() {
+  document.getElementById('modal_error').classList.add('hidden');
+  for (const it of editItems) {
+    if (!it.name || !String(it.name).trim()) return showModalError('品項名稱不可為空');
+    if (!(it.price > 0)) return showModalError('售價必須大於 0');
+    if (!(it.gm >= 0 && it.gm <= 100)) return showModalError('毛利率須介於 0 – 100');
+  }
+  const password = sessionStorage.getItem('aikyo_pw');
+  if (!password) return showModalError('登入狀態異常，請重新登入');
+  setSaveBtnLoading(true);
+  try {
+    const res = await fetch('/api/save-items', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password, items: editItems })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showModalError(data.error || `儲存失敗（${res.status}）`);
+      setSaveBtnLoading(false);
+      return;
+    }
+    items = data.items || editItems;
+    syncRuntimeArrays();
+    renderItems();
+    renderB2BQty();
+    renderScenarioButtons();
+    renderCustomMix();
+    calc();
+    setSaveBtnLoading(false);
+    closeItemsModal();
+    showToast(`已儲存到 GitHub${data.commit ? '（' + data.commit.slice(0,7) + '）' : ''}`);
+  } catch (e) {
+    showModalError('網路錯誤：' + (e.message || e));
+    setSaveBtnLoading(false);
+  }
+}
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => el.classList.add('hidden'), 3500);
+}
+
 // Init (only run if already authenticated)
-if (sessionStorage.getItem('aikyo_auth') === '1') calc();
+if (sessionStorage.getItem('aikyo_auth') === '1' && sessionStorage.getItem('aikyo_pw')) bootstrap();
 </script>
 </body>
 </html>

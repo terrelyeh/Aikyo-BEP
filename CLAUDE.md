@@ -8,24 +8,35 @@
 
 ## Tech Stack
 
-- **純 HTML 單檔**（`index.html`），零建置步驟
+- **單頁 HTML**（`index.html`）+ 一個 Vercel serverless function（`api/save-items.js`）
 - Tailwind CSS 3（CDN）
 - Chart.js 4.4（CDN）
 - 字型：Noto Sans TC（中文）/ Inter（數字，tabular-nums）
 - 部署：Vercel（push to main 自動部署，aikyo-bep.vercel.app）
 - 密碼閘門：SHA-256 hash 比對，sessionStorage 保持登入
+- 品項資料（CMS）：`items.json` 存於 repo，前端 fetch；編輯時透過 `/api/save-items` 用 GitHub API commit 回 main
 
 ## Directory Structure
 
 ```
 .
-├── index.html      # 唯一的應用程式檔案，包含 HTML + CSS + JS
-├── README.md       # 專案說明（對外）
-├── CLAUDE.md       # AI session context（本檔）
-└── .claude/        # Claude Code 設定
+├── index.html        # 主應用，包含 HTML + CSS + JS
+├── items.json        # 品項資料（名稱 / 售價 / 毛利率），由 CMS 寫入
+├── api/
+│   └── save-items.js # Vercel serverless function，驗證密碼後 commit items.json
+├── README.md         # 專案說明（對外）
+├── CLAUDE.md         # AI session context（本檔）
+└── .claude/          # Claude Code 設定
 ```
 
-沒有 `package.json`、沒有 build pipeline、沒有 node_modules。所有邏輯都在 `index.html` 裡。
+沒有 `package.json`、沒有 build pipeline、沒有 node_modules。前端邏輯都在 `index.html`，serverless function 用 CommonJS 寫一個檔案搞定。
+
+### Vercel 環境變數（必設）
+
+| 變數 | 說明 |
+|---|---|
+| `GITHUB_TOKEN` | Fine-grained PAT，限本 repo `Contents: Read & Write` |
+| `GITHUB_REPO`  | `terrelyeh/Aikyo-BEP` |
 
 ## Architecture — index.html 結構
 
@@ -41,16 +52,16 @@
 
 ### 左側控制卡片（5 張）
 
-1. **產品設定** — 霜淇淋 / 聖代的售價 + 毛利率 slider
-2. **通路設定** — 酒場合作 B2B toggle（選用模組），開啟後可輸入月售量，返利 20%
-3. **營運設定** — 營業天數、時數、PT cover 比例 / 時薪 / 人數
+1. **產品設定** — 動態 N 品項（1–5 個，從 `items.json` 載入），每項可調售價 + 毛利率 slider；右上角 `✏️ 編輯品項` → modal 增刪改名 + 寫回 GitHub
+2. **通路設定** — 酒場合作 B2B toggle（選用模組），開啟後 per item 月售量輸入，返利 20%
+3. **營運設定** — 營業天數、時數、當月總時數（顯示）、PT cover 比例 / 時薪 / 人數
 4. **變動成本** — 每筆交易變動成本率 slider（0-30%），含可收合的參考區間
-5. **每月固定成本** — 房租、水電、折舊、正職薪資；PT 排班 + 勞保自動計算
+5. **每月固定成本** — 房租、水電、折舊（toggle，可關閉）、正職薪資；PT 排班 + 勞保自動計算
 
 ### 右側結果區塊
 
 1. **BEP 結果卡**（`bep-glow`）— 大數字 + 目標月利潤輸入 + 公式說明 + Reset 按鈕
-2. **銷量目標情境卡**（`result-card`）— 全霜淇淋 / 各半 / 全聖代 / 自訂，月日時銷量 + 對比表
+2. **銷量目標情境卡**（`result-card`）— 動態：每品項一顆「全 X」 + 「平均混合」 + 「自訂」，月日時銷量 + 對比表
 3. **免責說明** — 提醒變動成本率需自行調整
 4. **損益敏感度圖** — Chart.js 折線圖，綠色獲利 / 紅色虧損
 5. **固定成本結構** — 水平長條圖，各項佔比
@@ -67,11 +78,12 @@
 
 ### JS 結構
 
-- `checkPW()` — 密碼驗證（SHA-256）
-- `calc()` — 主計算函式，所有輸入 `onchange` / `oninput` 都呼叫它
-- `blendedGM()` — 計算混合毛利率（以營收加權）
-- `setScenario()` — 切換產品組合情境
-- `fmt()` / `fmtDec()` — 數字格式化
+- `checkPW()` — 密碼驗證（SHA-256），通過後把原始密碼存 `sessionStorage.aikyo_pw` 以供 API 認證
+- `bootstrap()` — fetch `items.json` → 渲染所有動態區塊 → `calc()`
+- `calc()` — 主計算函式，所有輸入 `onchange` / `oninput` 都呼叫它，內部用 `items` 陣列
+- `renderItems` / `renderB2BQty` / `renderScenarioButtons` / `renderCustomMix` — 依 `items` 重渲染對應區塊
+- `setScenario(key)` — `'item_<i>' | 'avg' | 'custom'`
+- `openItemsModal()` / `saveItemsToGitHub()` — 編輯 modal 與 POST `/api/save-items`
 
 ## Conventions
 
@@ -91,13 +103,15 @@
 - 酒場 B2B 通路模擬（選用，toggle 開關，返利 20%）
 - 損益敏感度折線圖（Chart.js，綠/紅漸層）
 - 固定成本結構長條圖
-- 多情境對比（全霜淇淋 / 各半 / 全聖代 / 自訂比例）
+- 多情境對比（動態：每品項一顆 + 平均混合 + 自訂）
 - 目標利潤模式（輸入目標月利潤 → 反推所需營業額，badge 橘→綠切換）
 - 變動成本率 slider（0-30%，含可收合的參考區間）
 - Reset 按鈕（卡片右上角，目標利潤 > 0 時出現）
 - 密碼閘門（SHA-256）
 - 所有數字 Inter 字體 + tabular-nums
 - 結果卡片立體化（多層 shadow）
+- 折舊 toggle（可整項排除）
+- 品項 CMS：動態 1–5 品項（`items.json` + `/api/save-items`，密碼驗證後 commit 回 GitHub）
 
 ### Pending / Ideas
 
@@ -121,6 +135,8 @@ git push origin main
 - **BEP 公式分母不能為零**：如果 `毛利率 ≤ 變動成本率`，BEP 會變成 Infinity。程式碼有 `effectiveGM > 0` 的 guard，但要注意不要讓 slider 設到不合理的值
 - **B2B 貢獻只抵固定成本，不影響變動成本計算**：酒場的毛利貢獻（扣完 20% rebate）直接從固定成本分子扣除，變動成本率只作用在直營 BEP 的分母
 - **PT 勞保是固定 1,700 元 × 人數**：這是簡化計算，實際勞保級距會不同
-- **密碼 hash 寫死在 JS 裡**：改密碼需要重新算 SHA-256 hash 並更新 `PW_HASH` 常數
+- **密碼 hash 寫死在 JS 裡**：改密碼需要重新算 SHA-256 hash 並**同時更新兩處** — `index.html` 的 `PW_HASH` + `api/save-items.js` 的 `PW_HASH`，否則 CMS 寫回會 401
+- **CMS 認證流程**：login 時把原始密碼存 `sessionStorage.aikyo_pw`，存檔時 POST 給 serverless function；function 用 GitHub PAT (`GITHUB_TOKEN` env) 寫 `items.json` 回 main，會觸發 Vercel 自動部署 → 頁面下次 reload 才會看到新值
+- **舊 session 無密碼**：CMS 上線前的 session 沒存 `aikyo_pw`，bootstrap 會自動清掉 `aikyo_auth` 強制重新登入，避免存檔時 401
 - **Chart.js 的 borderColor 用 function 而非固定值**：因為要做綠紅漸層切換，如果改成固定色會失去效果
 - **README.md 的注意事項還提到「外送平台抽成」**：已從頁面移除（因為沒有外送平台），但 README 尚未同步更新
