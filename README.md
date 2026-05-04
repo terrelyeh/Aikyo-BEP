@@ -2,7 +2,7 @@
 
 愛嬌冰店互動式 BEP（Break-Even Point）試算工具，適合與團隊溝通討論使用。
 
-**Demo →** [Cloudflare Pages 部署連結]
+**Demo →** https://aikyo-bep.vercel.app
 
 ---
 

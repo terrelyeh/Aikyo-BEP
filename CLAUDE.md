@@ -1,10 +1,10 @@
 # CLAUDE.md — Project Context
 
-> Last updated: 2026-03-18
+> Last updated: 2026-05-04
 
 ## Project Overview
 
-愛嬌冰店（Aikyo）的**互動式損益平衡分析工具**。純前端單檔應用，讓經營團隊掌握固定成本結構、找到損益平衡點（BEP），並以此為 baseline 規劃盈利策略。部署在 Cloudflare Pages，有密碼閘門保護。
+愛嬌冰店（Aikyo）的**互動式損益平衡分析工具**。純前端單檔應用，讓經營團隊掌握固定成本結構、找到損益平衡點（BEP），並以此為 baseline 規劃盈利策略。部署在 Vercel（https://aikyo-bep.vercel.app），有密碼閘門保護。
 
 ## Tech Stack
 
@@ -12,7 +12,7 @@
 - Tailwind CSS 3（CDN）
 - Chart.js 4.4（CDN）
 - 字型：Noto Sans TC（中文）/ Inter（數字，tabular-nums）
-- 部署：Cloudflare Pages（push to main 自動部署）
+- 部署：Vercel（push to main 自動部署，aikyo-bep.vercel.app）
 - 密碼閘門：SHA-256 hash 比對，sessionStorage 保持登入
 
 ## Directory Structure
@@ -112,7 +112,7 @@
 # 本地預覽 — 直接開瀏覽器
 open index.html
 
-# 部署 — push to main，Cloudflare Pages 自動部署
+# 部署 — push to main，Vercel 自動部署
 git push origin main
 ```
 
