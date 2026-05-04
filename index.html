@@ -112,7 +112,13 @@
 
         <!-- 營運設定 -->
         <div class="card p-5">
-          <p class="section-label">營運設定</p>
+          <div class="flex items-center justify-between mb-4">
+            <p class="section-label" style="margin-bottom:0">營運設定</p>
+            <button onclick="saveDefaults('operations')" id="save_ops_btn" class="flex items-center gap-1 text-xs text-stone-500 hover:text-orange-600 border border-stone-200 hover:border-orange-300 rounded-full px-2.5 py-1 transition-colors duration-150 cursor-pointer" title="把目前的值存為預設值">
+              <span id="save_ops_spinner" class="hidden inline-block w-2.5 h-2.5 border-2 border-stone-400 border-t-transparent rounded-full animate-spin"></span>
+              <span id="save_ops_label">💾 存為預設值</span>
+            </button>
+          </div>
           <div class="space-y-3">
             <div class="flex items-center justify-between">
               <span class="text-base text-stone-600">每月營業天數</span>
@@ -168,7 +174,13 @@
 
         <!-- 固定成本 -->
         <div class="card p-5">
-          <p class="section-label">每月固定成本</p>
+          <div class="flex items-center justify-between mb-4">
+            <p class="section-label" style="margin-bottom:0">每月固定成本</p>
+            <button onclick="saveDefaults('fixedCosts')" id="save_fc_btn" class="flex items-center gap-1 text-xs text-stone-500 hover:text-orange-600 border border-stone-200 hover:border-orange-300 rounded-full px-2.5 py-1 transition-colors duration-150 cursor-pointer" title="把目前的值存為預設值">
+              <span id="save_fc_spinner" class="hidden inline-block w-2.5 h-2.5 border-2 border-stone-400 border-t-transparent rounded-full animate-spin"></span>
+              <span id="save_fc_label">💾 存為預設值</span>
+            </button>
+          </div>
           <div class="space-y-3">
             <div class="flex items-center justify-between">
               <span class="text-base text-stone-600">房租</span>
@@ -394,7 +406,7 @@ if (sessionStorage.getItem('aikyo_auth') === '1' && sessionStorage.getItem('aiky
   document.getElementById('pw_gate').style.display = 'none';
   document.getElementById('main_content').style.display = 'block';
 } else {
-  // Old session without password (pre-CMS) — force re-login so /api/save-items can authenticate
+  // Old session without password (pre-CMS) — force re-login so /api/save-config can authenticate
   sessionStorage.removeItem('aikyo_auth');
 }
 
@@ -424,20 +436,70 @@ function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
 async function bootstrap() {
   try {
-    const r = await fetch('items.json?t=' + Date.now(), { cache: 'no-store' });
+    const r = await fetch('config.json?t=' + Date.now(), { cache: 'no-store' });
     if (r.ok) {
       const data = await r.json();
       if (Array.isArray(data.items) && data.items.length > 0) {
         items = data.items.slice(0, MAX_ITEMS);
       }
+      if (data.defaults) applyDefaults(data.defaults);
     }
-  } catch (_) { /* fall back to defaults */ }
+  } catch (_) { /* fall back to inline defaults */ }
   syncRuntimeArrays();
   renderItems();
   renderB2BQty();
   renderScenarioButtons();
   renderCustomMix();
   calc();
+}
+
+function applyDefaults(d) {
+  if (d.operations) {
+    const o = d.operations;
+    setIfNum('days',     o.days);
+    setIfNum('hours',    o.hours);
+    setIfNum('pt_pct',   o.ptPct);
+    setIfNum('pt_wage',  o.ptWage);
+    setIfNum('pt_count', o.ptCount);
+  }
+  if (d.fixedCosts) {
+    const f = d.fixedCosts;
+    setIfNum('rent',         f.rent);
+    setIfNum('utilities',    f.utilities);
+    setIfNum('depreciation', f.depreciation);
+    setIfNum('fulltime',     f.fulltime);
+    if (typeof f.depreciationEnabled === 'boolean') {
+      document.getElementById('depreciation_enabled').checked = f.depreciationEnabled;
+    }
+  }
+}
+function setIfNum(id, v) {
+  if (typeof v === 'number' && isFinite(v)) {
+    const el = document.getElementById(id);
+    if (el) el.value = v;
+  }
+}
+
+function readCurrentConfig() {
+  return {
+    items: clone(items),
+    defaults: {
+      operations: {
+        days:    +document.getElementById('days').value,
+        hours:   +document.getElementById('hours').value,
+        ptPct:   +document.getElementById('pt_pct').value,
+        ptWage:  +document.getElementById('pt_wage').value,
+        ptCount: +document.getElementById('pt_count').value,
+      },
+      fixedCosts: {
+        rent:                +document.getElementById('rent').value,
+        utilities:           +document.getElementById('utilities').value,
+        depreciation:        +document.getElementById('depreciation').value,
+        depreciationEnabled: document.getElementById('depreciation_enabled').checked,
+        fulltime:            +document.getElementById('fulltime').value,
+      }
+    }
+  };
 }
 
 function syncRuntimeArrays() {
@@ -972,6 +1034,19 @@ function setSaveBtnLoading(loading) {
   document.getElementById('modal_save_spinner').classList.toggle('hidden', !loading);
   document.getElementById('modal_save_label').textContent = loading ? '儲存中…' : '💾 儲存到 GitHub';
 }
+async function saveConfig(config) {
+  const password = sessionStorage.getItem('aikyo_pw');
+  if (!password) throw new Error('登入狀態異常，請重新登入');
+  const res = await fetch('/api/save-config', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password, config })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `儲存失敗（${res.status}）`);
+  return data;
+}
+
 async function saveItemsToGitHub() {
   document.getElementById('modal_error').classList.add('hidden');
   for (const it of editItems) {
@@ -979,22 +1054,12 @@ async function saveItemsToGitHub() {
     if (!(it.price > 0)) return showModalError('售價必須大於 0');
     if (!(it.gm >= 0 && it.gm <= 100)) return showModalError('毛利率須介於 0 – 100');
   }
-  const password = sessionStorage.getItem('aikyo_pw');
-  if (!password) return showModalError('登入狀態異常，請重新登入');
   setSaveBtnLoading(true);
   try {
-    const res = await fetch('/api/save-items', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password, items: editItems })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      showModalError(data.error || `儲存失敗（${res.status}）`);
-      setSaveBtnLoading(false);
-      return;
-    }
-    items = data.items || editItems;
+    const cfg = readCurrentConfig();
+    cfg.items = editItems;
+    const data = await saveConfig(cfg);
+    items = data.config && data.config.items ? data.config.items : editItems;
     syncRuntimeArrays();
     renderItems();
     renderB2BQty();
@@ -1005,13 +1070,35 @@ async function saveItemsToGitHub() {
     closeItemsModal();
     showToast(`已儲存到 GitHub${data.commit ? '（' + data.commit.slice(0,7) + '）' : ''}`);
   } catch (e) {
-    showModalError('網路錯誤：' + (e.message || e));
+    showModalError(e.message || String(e));
     setSaveBtnLoading(false);
   }
 }
-function showToast(msg) {
+
+async function saveDefaults(kind) {
+  const btnId      = kind === 'operations' ? 'save_ops_btn'     : 'save_fc_btn';
+  const spinnerId  = kind === 'operations' ? 'save_ops_spinner' : 'save_fc_spinner';
+  const labelId    = kind === 'operations' ? 'save_ops_label'   : 'save_fc_label';
+  const btn = document.getElementById(btnId);
+  const spinner = document.getElementById(spinnerId);
+  const label = document.getElementById(labelId);
+  btn.disabled = true; btn.style.opacity = '0.6';
+  spinner.classList.remove('hidden');
+  label.textContent = '儲存中…';
+  try {
+    const data = await saveConfig(readCurrentConfig());
+    showToast(`預設值已存到 GitHub${data.commit ? '（' + data.commit.slice(0,7) + '）' : ''}`);
+  } catch (e) {
+    showToast('儲存失敗：' + (e.message || e), 'error');
+  }
+  btn.disabled = false; btn.style.opacity = '1';
+  spinner.classList.add('hidden');
+  label.textContent = '💾 存為預設值';
+}
+function showToast(msg, kind = 'success') {
   const el = document.getElementById('toast');
   el.textContent = msg;
+  el.style.background = kind === 'error' ? '#EF4444' : '#10B981';
   el.classList.remove('hidden');
   clearTimeout(window._toastTimer);
   window._toastTimer = setTimeout(() => el.classList.add('hidden'), 3500);

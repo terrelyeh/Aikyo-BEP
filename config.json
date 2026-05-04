@@ -1,0 +1,22 @@
+{
+  "items": [
+    { "name": "🍦 霜淇淋", "price": 150, "gm": 62 },
+    { "name": "🍨 聖代", "price": 250, "gm": 65 }
+  ],
+  "defaults": {
+    "operations": {
+      "days": 24,
+      "hours": 9,
+      "ptPct": 50,
+      "ptWage": 200,
+      "ptCount": 2
+    },
+    "fixedCosts": {
+      "rent": 13000,
+      "utilities": 3000,
+      "depreciation": 11590,
+      "depreciationEnabled": true,
+      "fulltime": 41155
+    }
+  }
+}
