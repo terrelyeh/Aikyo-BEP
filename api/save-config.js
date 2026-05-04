@@ -101,7 +101,13 @@ module.exports = async function handler(req, res) {
     const data = await getRes.json();
     sha = data.sha;
   } else if (getRes.status !== 404) {
-    return res.status(500).json({ error: 'Failed to fetch current file', detail: await getRes.text() });
+    const detail = await getRes.text();
+    console.error('[save-config] GitHub GET failed', getRes.status, detail);
+    return res.status(500).json({
+      error: `Failed to fetch current file (${getRes.status})`,
+      status: getRes.status,
+      detail
+    });
   }
 
   const cleaned = cleanConfig(config);
@@ -126,7 +132,12 @@ module.exports = async function handler(req, res) {
 
   if (!putRes.ok) {
     const detail = await putRes.text();
-    return res.status(500).json({ error: 'GitHub API failed', detail });
+    console.error('[save-config] GitHub PUT failed', putRes.status, detail);
+    return res.status(500).json({
+      error: `GitHub API failed (${putRes.status})`,
+      status: putRes.status,
+      detail
+    });
   }
 
   const result = await putRes.json();
