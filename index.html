@@ -245,6 +245,9 @@
             <span>÷</span>
             <span>混合毛利率 <span id="bep_gm" class="font-semibold text-stone-700">60%</span></span>
           </div>
+          <div class="mt-3 flex justify-center">
+            <span class="text-xs text-stone-500 bg-stone-50 border border-stone-200 rounded-full px-3 py-1">月食材成本約 <span class="num font-semibold text-stone-700" id="bep_food_cost">0</span> 元</span>
+          </div>
           <div id="b2b_contrib_row" class="hidden mt-2 flex justify-center">
             <span class="text-xs text-purple-600 bg-purple-50 rounded-full px-3 py-1">🍻 酒場月貢獻 <span id="b2b_contrib_display">0</span> 元（利潤）已抵固定成本</span>
           </div>
@@ -316,7 +319,7 @@
                   <th class="text-left text-stone-400 font-medium py-2 pr-3">情境</th>
                   <th class="text-right text-stone-400 font-medium py-2 pr-3">有效 GM</th>
                   <th class="text-right text-stone-400 font-medium py-2 pr-3">平均單價</th>
-                  <th class="text-right text-stone-400 font-medium py-2 pr-3">食材成本</th>
+                  <th class="text-right text-stone-400 font-medium py-2 pr-3">月食材成本</th>
                   <th class="text-right text-stone-400 font-medium py-2 pr-3">月（份）</th>
                   <th class="text-right text-stone-400 font-medium py-2 pr-3">日（份）</th>
                   <th class="text-right text-stone-400 font-medium py-2">時（份）</th>
@@ -794,6 +797,7 @@ function calc() {
     bepNumEl.style.color = '#E8744F';
   }
   bepNumEl.textContent = fmt(bep);
+  document.getElementById('bep_food_cost').textContent = fmt(isFinite(bep) ? bep * (1 - gm) : 0);
 
   // Formula display
   const numeratorLabel = b2bEnabled ? '直銷需承擔成本' : '固定成本';
@@ -817,12 +821,12 @@ function calc() {
     const isActive = s.key === currentScenario;
     const tr = document.createElement('tr');
     tr.className = isActive ? 'bg-orange-50' : '';
-    const unitCost = s.price * (1 - s.gm);
+    const monthlyCost = isFinite(s.bep) ? s.bep * (1 - s.gm) : 0;
     tr.innerHTML = `
       <td class="py-2 pr-3 font-medium ${isActive ? 'text-orange-700' : 'text-stone-600'}">${s.label}</td>
       <td class="num py-2 pr-3 text-right text-stone-400">${(s.effectiveGM*100).toFixed(1)}%</td>
       <td class="num py-2 pr-3 text-right text-stone-500">${fmt(s.price)} 元</td>
-      <td class="num py-2 pr-3 text-right text-stone-500">${fmt(unitCost)} 元</td>
+      <td class="num py-2 pr-3 text-right text-stone-500">${fmt(monthlyCost)} 元</td>
       <td class="num py-2 pr-3 text-right font-semibold ${isActive ? 'text-orange-700' : 'text-stone-700'}">${fmt(monthly)}</td>
       <td class="num py-2 pr-3 text-right font-semibold ${isActive ? 'text-orange-700' : 'text-stone-700'}">${fmt(daily)}</td>
       <td class="num py-2 text-right font-semibold ${isActive ? 'text-orange-700' : 'text-stone-700'}">${fmtDec(hourly, 2)}</td>
