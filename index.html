@@ -316,6 +316,7 @@
                   <th class="text-left text-stone-400 font-medium py-2 pr-3">情境</th>
                   <th class="text-right text-stone-400 font-medium py-2 pr-3">有效 GM</th>
                   <th class="text-right text-stone-400 font-medium py-2 pr-3">平均單價</th>
+                  <th class="text-right text-stone-400 font-medium py-2 pr-3">食材成本</th>
                   <th class="text-right text-stone-400 font-medium py-2 pr-3">月（份）</th>
                   <th class="text-right text-stone-400 font-medium py-2 pr-3">日（份）</th>
                   <th class="text-right text-stone-400 font-medium py-2">時（份）</th>
@@ -528,6 +529,10 @@ function renderItems() {
             <span class="num text-sm font-semibold" id="gm_display_${i}" style="color:${c.hex}">${it.gm}%</span>
           </div>
           <input type="range" id="gm_${i}" min="0" max="100" value="${it.gm}" step="1" oninput="onItemGmChange(${i})" class="w-full cursor-pointer" style="accent-color:${c.hex}" />
+          <div class="flex items-center justify-between mt-1.5 text-xs text-stone-400">
+            <span>食材成本</span>
+            <span class="num" id="cost_display_${i}">${fmt(it.price * (1 - it.gm / 100))} 元 / 份</span>
+          </div>
         </div>
       </div>
     `;
@@ -536,12 +541,18 @@ function renderItems() {
 
 function onItemPriceChange(i) {
   items[i].price = +document.getElementById('price_' + i).value;
+  updateItemCostDisplay(i);
   calc();
 }
 function onItemGmChange(i) {
   items[i].gm = +document.getElementById('gm_' + i).value;
   document.getElementById('gm_display_' + i).textContent = items[i].gm + '%';
+  updateItemCostDisplay(i);
   calc();
+}
+function updateItemCostDisplay(i) {
+  const el = document.getElementById('cost_display_' + i);
+  if (el) el.textContent = fmt(items[i].price * (1 - items[i].gm / 100)) + ' 元 / 份';
 }
 
 function renderB2BQty() {
@@ -806,10 +817,12 @@ function calc() {
     const isActive = s.key === currentScenario;
     const tr = document.createElement('tr');
     tr.className = isActive ? 'bg-orange-50' : '';
+    const unitCost = s.price * (1 - s.gm);
     tr.innerHTML = `
       <td class="py-2 pr-3 font-medium ${isActive ? 'text-orange-700' : 'text-stone-600'}">${s.label}</td>
       <td class="num py-2 pr-3 text-right text-stone-400">${(s.effectiveGM*100).toFixed(1)}%</td>
       <td class="num py-2 pr-3 text-right text-stone-500">${fmt(s.price)} 元</td>
+      <td class="num py-2 pr-3 text-right text-stone-500">${fmt(unitCost)} 元</td>
       <td class="num py-2 pr-3 text-right font-semibold ${isActive ? 'text-orange-700' : 'text-stone-700'}">${fmt(monthly)}</td>
       <td class="num py-2 pr-3 text-right font-semibold ${isActive ? 'text-orange-700' : 'text-stone-700'}">${fmt(daily)}</td>
       <td class="num py-2 text-right font-semibold ${isActive ? 'text-orange-700' : 'text-stone-700'}">${fmtDec(hourly, 2)}</td>
@@ -996,14 +1009,18 @@ function renderModalList() {
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="text-xs text-stone-400 block mb-1">售價（元）</label>
-            <input type="number" value="${it.price}" min="10" max="10000" oninput="editItems[${i}].price=+this.value"
+            <input type="number" value="${it.price}" min="10" max="10000" oninput="editItems[${i}].price=+this.value;updateModalCost(${i})"
               class="w-full text-sm" />
           </div>
           <div>
             <label class="text-xs text-stone-400 block mb-1">毛利率（%）</label>
-            <input type="number" value="${it.gm}" min="0" max="100" oninput="editItems[${i}].gm=+this.value"
+            <input type="number" value="${it.gm}" min="0" max="100" oninput="editItems[${i}].gm=+this.value;updateModalCost(${i})"
               class="w-full text-sm" />
           </div>
+        </div>
+        <div class="flex items-center justify-between mt-2 text-xs text-stone-400">
+          <span>食材成本</span>
+          <span class="num" id="modal_cost_${i}" style="color:${c.hex}">${fmt(it.price * (1 - it.gm / 100))} 元 / 份</span>
         </div>
       </div>
     `;
@@ -1013,6 +1030,12 @@ function renderModalList() {
   document.getElementById('modal_add_btn').textContent = editItems.length >= MAX_ITEMS
     ? `已達上限（${MAX_ITEMS} 個品項）`
     : '+ 新增品項';
+}
+function updateModalCost(i) {
+  const it = editItems[i];
+  if (!it) return;
+  const el = document.getElementById('modal_cost_' + i);
+  if (el) el.textContent = fmt((+it.price || 0) * (1 - (+it.gm || 0) / 100)) + ' 元 / 份';
 }
 function addItemRow() {
   if (editItems.length >= MAX_ITEMS) return;
