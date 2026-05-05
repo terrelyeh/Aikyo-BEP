@@ -23,7 +23,7 @@
       "rent": 13000,
       "utilities": 3000,
       "depreciation": 11590,
-      "depreciationEnabled": true,
+      "depreciationEnabled": false,
       "fulltime": 41155
     }
   }
