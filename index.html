@@ -293,11 +293,17 @@
             <div id="scenario_buttons" class="flex flex-wrap gap-1.5 justify-end"></div>
           </div>
 
-          <!-- 自訂比例 -->
-          <div id="custom_slider_row" class="hidden mb-4 bg-stone-50 rounded-xl px-4 py-3">
+          <!-- 銷售組合（主要操作區） -->
+          <div id="custom_slider_row" class="mb-4 bg-orange-50 border border-orange-100 rounded-xl px-4 py-3">
             <div class="flex items-center justify-between mb-2">
-              <span class="text-xs font-semibold text-stone-600">自訂品項組合比例</span>
-              <button onclick="resetCustomMix()" class="text-xs text-stone-400 hover:text-orange-500 underline cursor-pointer">平均</button>
+              <span class="text-xs font-bold text-orange-700">📊 銷售組合（口味 × 品項 月銷量比例）</span>
+              <div class="flex items-center gap-2">
+                <button onclick="resetCustomMix()" class="text-xs text-stone-500 hover:text-orange-600 underline cursor-pointer">平均</button>
+                <button onclick="saveDefaults('salesMix')" id="save_mix_btn" class="flex items-center gap-1 text-xs text-stone-500 hover:text-orange-600 border border-stone-200 hover:border-orange-300 rounded-full px-2 py-0.5 transition-colors duration-150 cursor-pointer" title="把目前的銷售比例存為預設值">
+                  <span id="save_mix_spinner" class="hidden inline-block w-2.5 h-2.5 border-2 border-stone-400 border-t-transparent rounded-full animate-spin"></span>
+                  <span id="save_mix_label">💾 存為預設值</span>
+                </button>
+              </div>
             </div>
             <div id="custom_mix_inputs" class="space-y-2"></div>
             <div id="custom_mix_total" class="text-xs text-stone-400 mt-2 text-right"></div>
@@ -475,7 +481,7 @@ let matrix = flavors.map(() => types.map(() => ({ price: 150, gm: 62 })));
 let b2bQty    = makeMatrix(0);
 let customMix = makeMatrix(0);
 
-let currentScenario = 'avg';
+let currentScenario = 'custom';
 let chart = null;
 let editFlavors = [];
 let editTypes = [];
@@ -559,6 +565,17 @@ function applyDefaults(d) {
     }
   }
   if (d.b2b) setIfNum('b2b_rebate', d.b2b.rebate);
+  if (Array.isArray(d.salesMix)) {
+    // Apply salesMix to customMix global, clamped to current matrix shape
+    const newMix = makeMatrix(0);
+    for (let f = 0; f < flavors.length; f++) {
+      for (let t = 0; t < types.length; t++) {
+        const v = d.salesMix[f] && d.salesMix[f][t];
+        newMix[f][t] = (typeof v === 'number' && isFinite(v)) ? v : 0;
+      }
+    }
+    customMix = newMix;
+  }
 }
 function setIfNum(id, v) {
   if (typeof v === 'number' && isFinite(v)) {
@@ -589,7 +606,8 @@ function readCurrentConfig() {
       },
       b2b: {
         rebate: +document.getElementById('b2b_rebate').value
-      }
+      },
+      salesMix: customMix.map(row => row.map(v => +v || 0))
     }
   };
 }
@@ -716,6 +734,10 @@ function onB2BQtyChange(f, t) {
 function renderScenarioButtons() {
   const container = document.getElementById('scenario_buttons');
   const btns = [];
+  // Primary: 銷售組合 (active by default)
+  btns.push(`<button class="scenario-btn text-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500" onclick="setScenario('custom')" id="btn_custom">📊 銷售組合</button>`);
+  // 對照情境（小灰字標籤 + 後續按鈕）
+  btns.push(`<span class="text-xs text-stone-400 self-center px-1">對照</span>`);
   // 全 [type] — sum across all flavors of that type
   types.forEach((tp, ti) => {
     btns.push(`<button class="scenario-btn text-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500" onclick="setScenario('type_${ti}')" id="btn_type_${ti}">全${escapeHtml(stripEmoji(tp.name))}</button>`);
@@ -726,8 +748,7 @@ function renderScenarioButtons() {
       btns.push(`<button class="scenario-btn text-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500" onclick="setScenario('flavor_${fi}')" id="btn_flavor_${fi}">全${escapeHtml(fl.name)}</button>`);
     });
   }
-  btns.push(`<button class="scenario-btn active text-sm px-3 py-1.5 rounded-full border border-orange-300" onclick="setScenario('avg')" id="btn_avg">平均混合</button>`);
-  btns.push(`<button class="scenario-btn text-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500" onclick="setScenario('custom')" id="btn_custom">自訂</button>`);
+  btns.push(`<button class="scenario-btn text-sm px-3 py-1.5 rounded-full border border-stone-200 text-stone-500" onclick="setScenario('avg')" id="btn_avg">平均混合</button>`);
   container.innerHTML = btns.join('');
   highlightScenario();
 }
@@ -757,17 +778,22 @@ function renderCustomMix() {
     const rows = flavors.map((fl, fi) => {
       const fc = FLAVOR_COLORS[fi % FLAVOR_COLORS.length];
       return `
-        <div class="flex items-center justify-between gap-2">
-          <span class="text-xs flex-1 truncate" style="color:${fc.hex}">${escapeHtml(fl.name)}</span>
-          <input type="number" id="mix_${fi}_${ti}" value="${customMix[fi][ti] || 0}" min="0" max="100" step="5" onchange="onCustomMixChange(${fi},${ti})" style="width:64px" />
-          <span class="text-xs text-stone-400">%</span>
+        <div class="px-2 py-1 rounded">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-medium" style="color:${fc.hex}">${escapeHtml(fl.name)}</span>
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <input type="number" id="mix_${fi}_${ti}" value="${customMix[fi][ti] || 0}" min="0" max="100" step="5" onchange="onCustomMixChange(${fi},${ti})" style="width:56px" />
+              <span class="text-xs text-stone-400">%</span>
+            </div>
+          </div>
+          <div class="num text-xs text-stone-500 mt-0.5 text-right" id="mix_breakdown_${fi}_${ti}">月 — 份 · — 元</div>
         </div>
       `;
     }).join('');
     return `
       <div>
         <p class="text-xs font-semibold mb-1" style="color:${tc.hex}">${escapeHtml(tp.name)}</p>
-        <div class="space-y-1 pl-2">${rows}</div>
+        <div class="space-y-1 pl-1">${rows}</div>
       </div>
     `;
   }).join('');
@@ -892,6 +918,21 @@ function calc() {
     const effectiveGM = s.gm - varCostRate;
     s.effectiveGM = effectiveGM;
     s.bep = effectiveGM > 0 ? (directFC + targetProfit) / effectiveGM : Infinity;
+  });
+
+  // Update sales-mix per-cell breakdown (units + revenue at custom-scenario BEP)
+  const customScn = scenarios.find(s => s.key === 'custom');
+  cells.forEach((c, i) => {
+    const el = document.getElementById(`mix_breakdown_${c.f}_${c.t}`);
+    if (!el) return;
+    if (customScn && isFinite(customScn.bep) && customScn.price > 0) {
+      const totalUnits = customScn.bep / customScn.price;
+      const cellUnits = totalUnits * mixNorm[i];
+      const cellRevenue = cellUnits * c.price;
+      el.textContent = `月 ${fmt(cellUnits)} 份 · ${fmt(cellRevenue)} 元`;
+    } else {
+      el.textContent = '月 — 份 · — 元';
+    }
   });
 
   // Active scenario
@@ -1183,7 +1224,6 @@ function calc() {
 function setScenario(key) {
   currentScenario = key;
   highlightScenario();
-  document.getElementById('custom_slider_row').classList.toggle('hidden', key !== 'custom');
   calc();
 }
 
@@ -1402,6 +1442,7 @@ async function saveDefaults(kind) {
     operations: { btn: 'save_ops_btn', spinner: 'save_ops_spinner', label: 'save_ops_label' },
     fixedCosts: { btn: 'save_fc_btn',  spinner: 'save_fc_spinner',  label: 'save_fc_label'  },
     b2b:        { btn: 'save_b2b_btn', spinner: 'save_b2b_spinner', label: 'save_b2b_label' },
+    salesMix:   { btn: 'save_mix_btn', spinner: 'save_mix_spinner', label: 'save_mix_label' },
   };
   const ids = map[kind] || map.operations;
   const btnId = ids.btn, spinnerId = ids.spinner, labelId = ids.label;

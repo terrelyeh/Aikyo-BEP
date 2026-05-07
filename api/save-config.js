@@ -51,6 +51,15 @@ function validateConfig(cfg) {
     if (typeof d.b2b !== 'object' || d.b2b === null) return 'Invalid b2b';
     if (!isPosNum(d.b2b.rebate, 100)) return 'Invalid b2b.rebate';
   }
+  if (d.salesMix !== undefined) {
+    if (!Array.isArray(d.salesMix)) return 'salesMix must be an array';
+    for (const row of d.salesMix) {
+      if (!Array.isArray(row)) return 'salesMix row must be an array';
+      for (const v of row) {
+        if (!isPosNum(v, 100)) return 'Invalid salesMix value';
+      }
+    }
+  }
   return null;
 }
 
@@ -79,7 +88,12 @@ function cleanConfig(cfg) {
       },
       b2b: cfg.defaults.b2b ? {
         rebate: Math.round(Number(cfg.defaults.b2b.rebate))
-      } : { rebate: 15 }
+      } : { rebate: 15 },
+      ...(cfg.defaults.salesMix ? {
+        salesMix: cfg.defaults.salesMix.map(row =>
+          row.map(v => Math.round(Number(v) || 0))
+        )
+      } : {})
     }
   };
 }
