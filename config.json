@@ -25,6 +25,9 @@
       "depreciation": 11590,
       "depreciationEnabled": false,
       "fulltime": 41155
+    },
+    "b2b": {
+      "rebate": 15
     }
   }
 }

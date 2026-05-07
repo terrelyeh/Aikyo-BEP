@@ -91,14 +91,20 @@
         <div class="card p-5" style="background:#F6F3FF; border-color:#DDD6F5;">
           <div class="flex items-center justify-between mb-3">
             <p class="section-label" style="margin-bottom:0">通路設定</p>
-            <label class="flex items-center gap-2 cursor-pointer select-none">
-              <span class="text-sm text-stone-500">酒場合作</span>
-              <div class="relative w-9 h-5">
-                <input type="checkbox" id="b2b_enabled" class="sr-only" onchange="calc()">
-                <div class="absolute inset-0 rounded-full transition-colors duration-200" id="b2b_track" style="background:#d1d5db"></div>
-                <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200" id="b2b_thumb"></div>
-              </div>
-            </label>
+            <div class="flex items-center gap-2">
+              <button onclick="saveDefaults('b2b')" id="save_b2b_btn" class="flex items-center gap-1 text-xs text-stone-500 hover:text-purple-600 border border-stone-200 hover:border-purple-300 rounded-full px-2.5 py-1 transition-colors duration-150 cursor-pointer" title="把目前的返利比例存為預設值">
+                <span id="save_b2b_spinner" class="hidden inline-block w-2.5 h-2.5 border-2 border-stone-400 border-t-transparent rounded-full animate-spin"></span>
+                <span id="save_b2b_label">💾 存為預設值</span>
+              </button>
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <span class="text-sm text-stone-500">酒場合作</span>
+                <div class="relative w-9 h-5">
+                  <input type="checkbox" id="b2b_enabled" class="sr-only" onchange="calc()">
+                  <div class="absolute inset-0 rounded-full transition-colors duration-200" id="b2b_track" style="background:#d1d5db"></div>
+                  <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200" id="b2b_thumb"></div>
+                </div>
+              </label>
+            </div>
           </div>
           <div id="b2b_settings" class="space-y-3 hidden">
             <div class="rounded-lg bg-purple-50 border border-purple-100 px-3 py-2.5">
@@ -480,6 +486,7 @@ function applyDefaults(d) {
       document.getElementById('depreciation_enabled').checked = f.depreciationEnabled;
     }
   }
+  if (d.b2b) setIfNum('b2b_rebate', d.b2b.rebate);
 }
 function setIfNum(id, v) {
   if (typeof v === 'number' && isFinite(v)) {
@@ -505,6 +512,9 @@ function readCurrentConfig() {
         depreciation:        +document.getElementById('depreciation').value,
         depreciationEnabled: document.getElementById('depreciation_enabled').checked,
         fulltime:            +document.getElementById('fulltime').value,
+      },
+      b2b: {
+        rebate: +document.getElementById('b2b_rebate').value
       }
     }
   };
@@ -1110,9 +1120,13 @@ async function saveItemsToGitHub() {
 }
 
 async function saveDefaults(kind) {
-  const btnId      = kind === 'operations' ? 'save_ops_btn'     : 'save_fc_btn';
-  const spinnerId  = kind === 'operations' ? 'save_ops_spinner' : 'save_fc_spinner';
-  const labelId    = kind === 'operations' ? 'save_ops_label'   : 'save_fc_label';
+  const map = {
+    operations: { btn: 'save_ops_btn', spinner: 'save_ops_spinner', label: 'save_ops_label' },
+    fixedCosts: { btn: 'save_fc_btn',  spinner: 'save_fc_spinner',  label: 'save_fc_label'  },
+    b2b:        { btn: 'save_b2b_btn', spinner: 'save_b2b_spinner', label: 'save_b2b_label' },
+  };
+  const ids = map[kind] || map.operations;
+  const btnId = ids.btn, spinnerId = ids.spinner, labelId = ids.label;
   const btn = document.getElementById(btnId);
   const spinner = document.getElementById(spinnerId);
   const label = document.getElementById(labelId);

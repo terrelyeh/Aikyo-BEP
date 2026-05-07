@@ -31,6 +31,10 @@ function validateConfig(cfg) {
   if (!isPosNum(f.depreciation, 1e6)) return 'Invalid depreciation';
   if (!isPosNum(f.fulltime, 1e7))     return 'Invalid fulltime';
   if (typeof f.depreciationEnabled !== 'boolean') return 'Invalid depreciationEnabled';
+  if (d.b2b !== undefined) {
+    if (typeof d.b2b !== 'object' || d.b2b === null) return 'Invalid b2b';
+    if (!isPosNum(d.b2b.rebate, 100)) return 'Invalid b2b.rebate';
+  }
   return null;
 }
 
@@ -55,7 +59,10 @@ function cleanConfig(cfg) {
         depreciation:        Math.round(Number(cfg.defaults.fixedCosts.depreciation)),
         depreciationEnabled: !!cfg.defaults.fixedCosts.depreciationEnabled,
         fulltime:            Math.round(Number(cfg.defaults.fixedCosts.fulltime))
-      }
+      },
+      b2b: cfg.defaults.b2b ? {
+        rebate: Math.round(Number(cfg.defaults.b2b.rebate))
+      } : { rebate: 15 }
     }
   };
 }
