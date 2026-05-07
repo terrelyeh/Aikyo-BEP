@@ -292,7 +292,7 @@
             <p class="section-label flex-shrink-0" style="margin-bottom:0">銷量目標情境</p>
             <div class="inline-flex bg-stone-100 rounded-full p-1 gap-1">
               <button onclick="setViewMode('salesMix')" id="vm_mix" class="text-xs font-semibold px-3 py-1 rounded-full transition-colors cursor-pointer">📊 銷售組合</button>
-              <button onclick="setViewMode('reference')" id="vm_ref" class="text-xs font-semibold px-3 py-1 rounded-full transition-colors cursor-pointer">🔍 對照組合</button>
+              <button onclick="setViewMode('reference')" id="vm_ref" class="text-xs font-semibold px-3 py-1 rounded-full transition-colors cursor-pointer">🔍 平均銷售</button>
             </div>
           </div>
 
@@ -313,18 +313,34 @@
             <div id="mix_breakdown_table" class="overflow-x-auto"></div>
           </div>
 
-          <!-- View: 對照組合 -->
-          <div id="view_reference" class="mb-5 hidden">
-            <div class="bg-stone-50 border border-stone-200 rounded-xl px-4 py-3">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-bold text-stone-600">🔍 對照組合（極端情境）</span>
-                <span class="text-xs text-stone-400">假設只賣此類別 → 看 BEP 上下界</span>
-              </div>
-              <div id="scenario_buttons" class="flex flex-wrap gap-1.5"></div>
+          <!-- View: 平均銷售 (情境對照表) -->
+          <div id="view_reference" class="mb-5 hidden bg-stone-50 border border-stone-200 rounded-xl px-4 py-3">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-stone-600">🔍 平均銷售（情境對照）</span>
+              <span class="text-xs text-stone-400">點選任一列切換主指標</span>
             </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-stone-200">
+                    <th class="text-left text-stone-400 font-medium py-2 pr-3">情境</th>
+                    <th class="text-right text-stone-400 font-medium py-2 pr-3">有效 GM</th>
+                    <th class="text-right text-stone-400 font-medium py-2 pr-3">平均單價</th>
+                    <th class="text-right text-stone-400 font-medium py-2 pr-3">月食材成本</th>
+                    <th class="text-right text-stone-400 font-medium py-2 pr-3">月（份）</th>
+                    <th class="text-right text-stone-400 font-medium py-2 pr-3">日（份）</th>
+                    <th class="text-right text-stone-400 font-medium py-2">時（份）</th>
+                  </tr>
+                </thead>
+                <tbody id="scenario_table" class="divide-y divide-stone-100">
+                </tbody>
+              </table>
+            </div>
+            <!-- Hidden: only used as render target by renderScenarioButtons() — keeps that fn intact -->
+            <div id="scenario_buttons" class="hidden"></div>
           </div>
 
-          <div class="grid grid-cols-3 gap-3 mb-5">
+          <div class="grid grid-cols-3 gap-3">
             <div class="bg-orange-50 rounded-xl p-4 text-center">
               <p class="text-sm text-stone-500 mb-1">月銷售目標</p>
               <p class="num text-3xl font-bold text-orange-600" id="s_monthly">1,077</p>
@@ -340,25 +356,6 @@
               <p class="num text-3xl font-bold text-yellow-600" id="s_hourly">5.25</p>
               <p class="text-sm text-stone-400">份 / 小時</p>
             </div>
-          </div>
-
-          <!-- 三情境對比 -->
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="border-b border-stone-100">
-                  <th class="text-left text-stone-400 font-medium py-2 pr-3">情境</th>
-                  <th class="text-right text-stone-400 font-medium py-2 pr-3">有效 GM</th>
-                  <th class="text-right text-stone-400 font-medium py-2 pr-3">平均單價</th>
-                  <th class="text-right text-stone-400 font-medium py-2 pr-3">月食材成本</th>
-                  <th class="text-right text-stone-400 font-medium py-2 pr-3">月（份）</th>
-                  <th class="text-right text-stone-400 font-medium py-2 pr-3">日（份）</th>
-                  <th class="text-right text-stone-400 font-medium py-2">時（份）</th>
-                </tr>
-              </thead>
-              <tbody id="scenario_table" class="divide-y divide-stone-50">
-              </tbody>
-            </table>
           </div>
         </div>
 
@@ -1132,12 +1129,16 @@ function calc() {
   const tbody = document.getElementById('scenario_table');
   tbody.innerHTML = '';
   scenarios.forEach(s => {
+    // Hide the 自訂 (sales mix) scenario from the reference comparison table —
+    // it has its own dedicated 銷售組合 view.
+    if (s.key === 'custom') return;
     const monthly = s.bep / s.price;
     const daily   = monthly / days;
     const hourly  = daily / hours;
     const isActive = s.key === currentScenario;
     const tr = document.createElement('tr');
-    tr.className = isActive ? 'bg-orange-50' : '';
+    tr.className = (isActive ? 'bg-orange-50 ' : '') + 'cursor-pointer hover:bg-stone-100 transition-colors duration-150';
+    tr.onclick = () => setScenario(s.key);
     const monthlyCost = isFinite(s.bep) ? s.bep * (1 - s.gm) : 0;
     tr.innerHTML = `
       <td class="py-2 pr-3 font-medium ${isActive ? 'text-orange-700' : 'text-stone-600'}">${s.label}</td>
