@@ -290,23 +290,38 @@
         <div class="card result-card p-5">
           <div class="flex items-start justify-between gap-3 mb-4 flex-wrap">
             <p class="section-label flex-shrink-0" style="margin-bottom:0">銷量目標情境</p>
-            <div id="scenario_buttons" class="flex flex-wrap gap-1.5 justify-end"></div>
+            <div class="inline-flex bg-stone-100 rounded-full p-1 gap-1">
+              <button onclick="setViewMode('salesMix')" id="vm_mix" class="text-xs font-semibold px-3 py-1 rounded-full transition-colors cursor-pointer">📊 銷售組合</button>
+              <button onclick="setViewMode('reference')" id="vm_ref" class="text-xs font-semibold px-3 py-1 rounded-full transition-colors cursor-pointer">🔍 對照組合</button>
+            </div>
           </div>
 
-          <!-- 銷售組合（主要操作區） -->
-          <div id="custom_slider_row" class="mb-4 bg-orange-50 border border-orange-100 rounded-xl px-4 py-3">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-xs font-bold text-orange-700">📊 銷售組合（口味 × 品項 月銷量比例）</span>
+          <!-- View: 銷售組合 -->
+          <div id="view_salesMix" class="mb-5 bg-orange-50 border border-orange-100 rounded-xl px-4 py-3">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold text-orange-700">月銷量分布（依目前比例分攤）</span>
               <div class="flex items-center gap-2">
-                <button onclick="resetCustomMix()" class="text-xs text-stone-500 hover:text-orange-600 underline cursor-pointer">平均</button>
+                <button onclick="openMixModal()" class="flex items-center gap-1 text-xs text-stone-500 hover:text-orange-600 border border-stone-200 hover:border-orange-300 rounded-full px-2 py-0.5 transition-colors duration-150 cursor-pointer" title="編輯銷售比例">
+                  ✏️ 編輯比例
+                </button>
                 <button onclick="saveDefaults('salesMix')" id="save_mix_btn" class="flex items-center gap-1 text-xs text-stone-500 hover:text-orange-600 border border-stone-200 hover:border-orange-300 rounded-full px-2 py-0.5 transition-colors duration-150 cursor-pointer" title="把目前的銷售比例存為預設值">
                   <span id="save_mix_spinner" class="hidden inline-block w-2.5 h-2.5 border-2 border-stone-400 border-t-transparent rounded-full animate-spin"></span>
                   <span id="save_mix_label">💾 存為預設值</span>
                 </button>
               </div>
             </div>
-            <div id="custom_mix_inputs" class="space-y-2"></div>
-            <div id="custom_mix_total" class="text-xs text-stone-400 mt-2 text-right"></div>
+            <div id="mix_breakdown_table" class="overflow-x-auto"></div>
+          </div>
+
+          <!-- View: 對照組合 -->
+          <div id="view_reference" class="mb-5 hidden">
+            <div class="bg-stone-50 border border-stone-200 rounded-xl px-4 py-3">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-stone-600">🔍 對照組合（極端情境）</span>
+                <span class="text-xs text-stone-400">假設只賣此類別 → 看 BEP 上下界</span>
+              </div>
+              <div id="scenario_buttons" class="flex flex-wrap gap-1.5"></div>
+            </div>
           </div>
 
           <div class="grid grid-cols-3 gap-3 mb-5">
@@ -419,6 +434,23 @@
     </div>
   </div>
 
+  <!-- Edit Sales Mix Modal -->
+  <div id="mix_modal" class="fixed inset-0 z-40 flex items-center justify-center hidden" style="background:rgba(28,28,30,0.4); backdrop-filter:blur(2px)" onclick="if(event.target===this)closeMixModal()">
+    <div class="card p-6 w-full max-w-md mx-4" style="box-shadow:0 24px 48px rgba(0,0,0,0.18); max-height:90vh; overflow-y:auto;">
+      <div class="flex items-center justify-between mb-1">
+        <h3 class="text-lg font-bold text-stone-800">編輯銷售組合比例</h3>
+        <button onclick="closeMixModal()" class="text-stone-400 hover:text-stone-700 text-2xl leading-none cursor-pointer" aria-label="關閉">×</button>
+      </div>
+      <p class="text-xs text-stone-400 mb-4">調整每個口味 × 品項的月銷量比例。離開後若要永久保存，記得在主畫面按「💾 存為預設值」。</p>
+      <div id="custom_mix_inputs" class="space-y-3 mb-3"></div>
+      <div id="custom_mix_total" class="text-xs text-stone-400 mb-4 text-right"></div>
+      <div class="flex gap-2 justify-end pt-3 border-t border-stone-100">
+        <button onclick="resetCustomMix()" class="px-4 py-2 rounded-xl text-sm font-semibold text-stone-500 hover:text-stone-700 hover:bg-stone-100 transition-colors duration-150 cursor-pointer">平均分配</button>
+        <button onclick="closeMixModal()" class="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-colors duration-150 cursor-pointer" style="background:#E8744F">完成</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-lg" style="background:#10B981"></div>
 
@@ -481,7 +513,8 @@ let matrix = flavors.map(() => types.map(() => ({ price: 150, gm: 62 })));
 let b2bQty    = makeMatrix(0);
 let customMix = makeMatrix(0);
 
-let currentScenario = 'custom';
+let viewMode = 'salesMix';      // 'salesMix' | 'reference'
+let currentScenario = 'custom'; // when viewMode = salesMix, always 'custom'
 let chart = null;
 let editFlavors = [];
 let editTypes = [];
@@ -542,7 +575,7 @@ async function bootstrap() {
   renderB2BQty();
   renderScenarioButtons();
   renderCustomMix();
-  calc();
+  setViewMode(viewMode);  // apply initial segmented-control styling; calls calc()
 }
 
 function applyDefaults(d) {
@@ -772,32 +805,83 @@ function highlightScenario() {
 }
 
 function renderCustomMix() {
+  // Inputs live inside the edit modal — pure % editing, no breakdown.
   const container = document.getElementById('custom_mix_inputs');
+  if (!container) return;
   container.innerHTML = types.map((tp, ti) => {
     const tc = TYPE_COLORS[ti % TYPE_COLORS.length];
     const rows = flavors.map((fl, fi) => {
       const fc = FLAVOR_COLORS[fi % FLAVOR_COLORS.length];
       return `
-        <div class="px-2 py-1 rounded">
-          <div class="flex items-center justify-between gap-2">
-            <span class="text-xs font-medium" style="color:${fc.hex}">${escapeHtml(fl.name)}</span>
-            <div class="flex items-center gap-1 flex-shrink-0">
-              <input type="number" id="mix_${fi}_${ti}" value="${customMix[fi][ti] || 0}" min="0" max="100" step="5" onchange="onCustomMixChange(${fi},${ti})" style="width:56px" />
-              <span class="text-xs text-stone-400">%</span>
-            </div>
+        <div class="flex items-center justify-between gap-2 px-2 py-1.5 rounded">
+          <span class="text-sm font-medium" style="color:${fc.hex}">${escapeHtml(fl.name)}</span>
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <input type="number" id="mix_${fi}_${ti}" value="${customMix[fi][ti] || 0}" min="0" max="100" step="5" oninput="onCustomMixChange(${fi},${ti})" style="width:64px" />
+            <span class="text-xs text-stone-400">%</span>
           </div>
-          <div class="num text-xs text-stone-500 mt-0.5 text-right" id="mix_breakdown_${fi}_${ti}">月 — 份 · — 元</div>
         </div>
       `;
     }).join('');
     return `
       <div>
-        <p class="text-xs font-semibold mb-1" style="color:${tc.hex}">${escapeHtml(tp.name)}</p>
-        <div class="space-y-1 pl-1">${rows}</div>
+        <p class="text-sm font-semibold mb-1" style="color:${tc.hex}">${escapeHtml(tp.name)}</p>
+        <div class="space-y-0.5 pl-2">${rows}</div>
       </div>
     `;
   }).join('');
   updateCustomMixTotal();
+}
+
+function renderMixBreakdownTable(customScn, mixNorm) {
+  const container = document.getElementById('mix_breakdown_table');
+  if (!container) return;
+  const cells = getCells();
+  const totalUnits = (customScn && isFinite(customScn.bep) && customScn.price > 0)
+    ? customScn.bep / customScn.price : 0;
+
+  let totalQty = 0;
+  let totalRevenue = 0;
+  const rows = cells.map((c, i) => {
+    const fc = FLAVOR_COLORS[c.f % FLAVOR_COLORS.length];
+    const tc = TYPE_COLORS[c.t % TYPE_COLORS.length];
+    const pct = (mixNorm[i] * 100);
+    const units = totalUnits * mixNorm[i];
+    const revenue = units * c.price;
+    totalQty += units;
+    totalRevenue += revenue;
+    return `
+      <tr class="border-b border-orange-100 last:border-b-0">
+        <td class="py-1.5 pr-2 text-sm font-medium" style="color:${fc.hex}">${escapeHtml(c.flavorName)}</td>
+        <td class="py-1.5 pr-2 text-sm" style="color:${tc.hex}">${escapeHtml(c.typeName)}</td>
+        <td class="num py-1.5 pr-2 text-right text-sm text-stone-600">${pct.toFixed(0)}%</td>
+        <td class="num py-1.5 pr-2 text-right text-sm font-semibold text-stone-800">${fmt(units)}</td>
+        <td class="num py-1.5 text-right text-sm text-stone-600">${fmt(revenue)} 元</td>
+      </tr>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-orange-200">
+          <th class="text-left text-xs text-stone-500 font-medium pb-1.5 pr-2">口味</th>
+          <th class="text-left text-xs text-stone-500 font-medium pb-1.5 pr-2">品項</th>
+          <th class="text-right text-xs text-stone-500 font-medium pb-1.5 pr-2">比例</th>
+          <th class="text-right text-xs text-stone-500 font-medium pb-1.5 pr-2">月份數</th>
+          <th class="text-right text-xs text-stone-500 font-medium pb-1.5">月金額</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+      <tfoot>
+        <tr class="border-t-2 border-orange-300">
+          <td colspan="2" class="py-2 pr-2 text-sm font-bold text-stone-700">合計</td>
+          <td class="num py-2 pr-2 text-right text-sm font-bold text-stone-700">100%</td>
+          <td class="num py-2 pr-2 text-right text-sm font-bold text-orange-700">${fmt(totalQty)}</td>
+          <td class="num py-2 text-right text-sm font-bold text-orange-700">${fmt(totalRevenue)} 元</td>
+        </tr>
+      </tfoot>
+    </table>
+  `;
 }
 function onCustomMixChange(f, t) {
   customMix[f][t] = +document.getElementById(`mix_${f}_${t}`).value;
@@ -920,20 +1004,9 @@ function calc() {
     s.bep = effectiveGM > 0 ? (directFC + targetProfit) / effectiveGM : Infinity;
   });
 
-  // Update sales-mix per-cell breakdown (units + revenue at custom-scenario BEP)
+  // Render the always-visible breakdown table (in salesMix view)
   const customScn = scenarios.find(s => s.key === 'custom');
-  cells.forEach((c, i) => {
-    const el = document.getElementById(`mix_breakdown_${c.f}_${c.t}`);
-    if (!el) return;
-    if (customScn && isFinite(customScn.bep) && customScn.price > 0) {
-      const totalUnits = customScn.bep / customScn.price;
-      const cellUnits = totalUnits * mixNorm[i];
-      const cellRevenue = cellUnits * c.price;
-      el.textContent = `月 ${fmt(cellUnits)} 份 · ${fmt(cellRevenue)} 元`;
-    } else {
-      el.textContent = '月 — 份 · — 元';
-    }
-  });
+  renderMixBreakdownTable(customScn, mixNorm);
 
   // Active scenario
   const active = scenarios.find(s => s.key === currentScenario);
@@ -1226,6 +1299,49 @@ function setScenario(key) {
   highlightScenario();
   calc();
 }
+
+function setViewMode(mode) {
+  viewMode = mode;
+  // Sales mix view always uses 'custom' scenario; reference defaults to 'avg'
+  if (mode === 'salesMix') {
+    currentScenario = 'custom';
+  } else if (mode === 'reference' && currentScenario === 'custom') {
+    currentScenario = 'avg';
+  }
+  // Toggle visibility
+  document.getElementById('view_salesMix').classList.toggle('hidden', mode !== 'salesMix');
+  document.getElementById('view_reference').classList.toggle('hidden', mode !== 'reference');
+  // Update segmented-control active styling
+  const mixBtn = document.getElementById('vm_mix');
+  const refBtn = document.getElementById('vm_ref');
+  if (mode === 'salesMix') {
+    mixBtn.classList.add('bg-white', 'text-orange-600', 'shadow-sm');
+    mixBtn.classList.remove('text-stone-500');
+    refBtn.classList.remove('bg-white', 'text-orange-600', 'shadow-sm');
+    refBtn.classList.add('text-stone-500');
+  } else {
+    refBtn.classList.add('bg-white', 'text-orange-600', 'shadow-sm');
+    refBtn.classList.remove('text-stone-500');
+    mixBtn.classList.remove('bg-white', 'text-orange-600', 'shadow-sm');
+    mixBtn.classList.add('text-stone-500');
+  }
+  highlightScenario();
+  calc();
+}
+
+function openMixModal() {
+  // Re-render mix inputs into the modal
+  renderCustomMix();
+  document.getElementById('mix_modal').classList.remove('hidden');
+}
+function closeMixModal() {
+  document.getElementById('mix_modal').classList.add('hidden');
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !document.getElementById('mix_modal').classList.contains('hidden')) {
+    closeMixModal();
+  }
+});
 
 // ========= EDIT ITEMS MODAL =========
 function openItemsModal() {
