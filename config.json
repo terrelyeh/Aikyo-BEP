@@ -1,15 +1,26 @@
 {
-  "items": [
-    {
-      "name": "🍦 霜淇淋",
-      "price": 150,
-      "gm": 62
-    },
-    {
-      "name": "🍨 聖代",
-      "price": 250,
-      "gm": 65
-    }
+  "flavors": [
+    { "name": "茉莉" },
+    { "name": "花生" },
+    { "name": "巧克力" }
+  ],
+  "types": [
+    { "name": "🍦 霜淇淋" },
+    { "name": "🍨 聖代" }
+  ],
+  "matrix": [
+    [
+      { "price": 150, "gm": 62 },
+      { "price": 250, "gm": 65 }
+    ],
+    [
+      { "price": 150, "gm": 62 },
+      { "price": 250, "gm": 65 }
+    ],
+    [
+      { "price": 150, "gm": 62 },
+      { "price": 250, "gm": 65 }
+    ]
   ],
   "defaults": {
     "operations": {

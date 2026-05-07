@@ -8,12 +8,28 @@ function isPosNum(v, max = 1e9) {
 
 function validateConfig(cfg) {
   if (!cfg || typeof cfg !== 'object') return 'Config must be an object';
-  if (!Array.isArray(cfg.items)) return 'items must be an array';
-  if (cfg.items.length < 1 || cfg.items.length > 5) return 'items length must be 1-5';
-  for (const it of cfg.items) {
-    if (typeof it.name !== 'string' || !it.name.trim()) return 'Invalid item name';
-    if (!isPosNum(it.price, 10000) || it.price <= 0) return 'Invalid item price';
-    if (!isPosNum(it.gm, 100)) return 'Invalid item gm';
+  if (!Array.isArray(cfg.flavors)) return 'flavors must be an array';
+  if (cfg.flavors.length < 1 || cfg.flavors.length > 5) return 'flavors length must be 1-5';
+  for (const fl of cfg.flavors) {
+    if (typeof fl.name !== 'string' || !fl.name.trim()) return 'Invalid flavor name';
+  }
+  if (!Array.isArray(cfg.types)) return 'types must be an array';
+  if (cfg.types.length < 1 || cfg.types.length > 4) return 'types length must be 1-4';
+  for (const tp of cfg.types) {
+    if (typeof tp.name !== 'string' || !tp.name.trim()) return 'Invalid type name';
+  }
+  if (!Array.isArray(cfg.matrix) || cfg.matrix.length !== cfg.flavors.length) {
+    return 'matrix rows must match flavors length';
+  }
+  for (const row of cfg.matrix) {
+    if (!Array.isArray(row) || row.length !== cfg.types.length) {
+      return 'matrix columns must match types length';
+    }
+    for (const cell of row) {
+      if (!cell || typeof cell !== 'object') return 'Invalid matrix cell';
+      if (!isPosNum(cell.price, 10000) || cell.price <= 0) return 'Invalid cell price';
+      if (!isPosNum(cell.gm, 100)) return 'Invalid cell gm';
+    }
   }
   const d = cfg.defaults;
   if (!d || typeof d !== 'object') return 'defaults missing';
@@ -40,11 +56,12 @@ function validateConfig(cfg) {
 
 function cleanConfig(cfg) {
   return {
-    items: cfg.items.map(it => ({
-      name: String(it.name).trim(),
-      price: Math.round(Number(it.price)),
-      gm: Math.round(Number(it.gm))
-    })),
+    flavors: cfg.flavors.map(fl => ({ name: String(fl.name).trim() })),
+    types:   cfg.types.map(tp => ({ name: String(tp.name).trim() })),
+    matrix:  cfg.matrix.map(row => row.map(cell => ({
+      price: Math.round(Number(cell.price)),
+      gm:    Math.round(Number(cell.gm))
+    }))),
     defaults: {
       operations: {
         days:    Math.round(Number(cfg.defaults.operations.days)),
