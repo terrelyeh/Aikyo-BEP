@@ -102,8 +102,12 @@
           </div>
           <div id="b2b_settings" class="space-y-3 hidden">
             <div class="rounded-lg bg-purple-50 border border-purple-100 px-3 py-2.5">
-              <p class="text-xs font-semibold text-purple-700 mb-0.5">🍻 酒場員工推銷返利 20%</p>
-              <p class="text-xs text-stone-400 leading-relaxed">酒場每賣一份，返還 20% 毛利給酒場。填入預計月售量，計算酒場貢獻可抵多少固定成本。</p>
+              <div class="flex items-center justify-between mb-1.5">
+                <p class="text-xs font-semibold text-purple-700">🍻 酒場銷售返利 <span class="num" id="b2b_rebate_title">15</span>%</p>
+                <span class="num text-xs font-semibold text-purple-700" id="b2b_rebate_display">15%</span>
+              </div>
+              <input type="range" id="b2b_rebate" min="0" max="50" value="15" step="1" oninput="calc()" class="w-full cursor-pointer" style="accent-color:#9333EA" />
+              <p class="text-xs text-stone-500 leading-relaxed mt-2">酒場每賣一份，返還 <span class="num font-semibold text-purple-700" id="b2b_rebate_desc">15</span>% 毛利給酒場。填入預計月售量，計算酒場貢獻可抵多少固定成本。</p>
             </div>
             <div id="b2b_qty_container" class="space-y-3"></div>
             <div class="rounded-lg bg-stone-50 px-3 py-2.5 text-xs text-stone-500 space-y-1.5" id="b2b_impact"></div>
@@ -653,7 +657,10 @@ function calc() {
   const ptWage      = +document.getElementById('pt_wage').value;
   const ptCount     = +document.getElementById('pt_count').value;
   const b2bEnabled  = document.getElementById('b2b_enabled').checked;
-  const B2B_REBATE  = 0.20;
+  const B2B_REBATE  = (+document.getElementById('b2b_rebate').value || 0) / 100;
+  document.getElementById('b2b_rebate_title').textContent   = Math.round(B2B_REBATE * 100);
+  document.getElementById('b2b_rebate_display').textContent = Math.round(B2B_REBATE * 100) + '%';
+  document.getElementById('b2b_rebate_desc').textContent    = Math.round(B2B_REBATE * 100);
   const rent        = +document.getElementById('rent').value;
   const utilities   = +document.getElementById('utilities').value;
   const depEnabled  = document.getElementById('depreciation_enabled').checked;
