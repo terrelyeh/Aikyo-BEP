@@ -76,15 +76,20 @@
       <div class="space-y-4">
 
         <!-- 產品設定 -->
-        <div class="card p-5">
+        <div class="card p-5" id="card_products">
           <div class="flex items-center justify-between mb-4">
-            <p class="section-label" style="margin-bottom:0">產品設定</p>
+            <button onclick="toggleCard('products')" class="flex items-center gap-1.5 cursor-pointer group" title="收合 / 展開">
+              <svg id="card_products_chev" class="w-3 h-3 text-stone-400 group-hover:text-stone-600 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+              <p class="section-label group-hover:text-stone-700 transition-colors" style="margin-bottom:0">產品設定</p>
+            </button>
             <button onclick="openItemsModal()" class="flex items-center gap-1 text-xs text-stone-500 hover:text-orange-600 border border-stone-200 hover:border-orange-300 rounded-full px-2.5 py-1 transition-colors duration-150 cursor-pointer" title="編輯口味與品項">
               <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
               編輯口味/品項
             </button>
           </div>
-          <div id="matrix_container" class="space-y-4"></div>
+          <div id="card_products_body">
+            <div id="matrix_container" class="space-y-4"></div>
+          </div>
         </div>
 
         <!-- 通路設定 -->
@@ -573,6 +578,7 @@ async function bootstrap() {
   renderScenarioButtons();
   renderCustomMix();
   setViewMode(viewMode);  // apply initial segmented-control styling; calls calc()
+  applyCardCollapseStates();
 }
 
 function applyDefaults(d) {
@@ -1328,6 +1334,29 @@ function setViewMode(mode) {
   }
   highlightScenario();
   calc();
+}
+
+function toggleCard(name) {
+  const body = document.getElementById(`card_${name}_body`);
+  const chev = document.getElementById(`card_${name}_chev`);
+  if (!body || !chev) return;
+  const isCollapsed = body.classList.toggle('hidden');
+  chev.style.transform = isCollapsed ? 'rotate(-90deg)' : '';
+  // Persist state
+  try {
+    sessionStorage.setItem(`aikyo_card_${name}`, isCollapsed ? 'collapsed' : 'expanded');
+  } catch (_) {}
+}
+
+function applyCardCollapseStates() {
+  ['products'].forEach(name => {
+    if (sessionStorage.getItem(`aikyo_card_${name}`) === 'collapsed') {
+      const body = document.getElementById(`card_${name}_body`);
+      const chev = document.getElementById(`card_${name}_chev`);
+      if (body) body.classList.add('hidden');
+      if (chev) chev.style.transform = 'rotate(-90deg)';
+    }
+  });
 }
 
 function openMixModal() {
