@@ -295,9 +295,9 @@
         <div class="card result-card p-5">
           <div class="flex items-start justify-between gap-3 mb-4 flex-wrap">
             <p class="section-label flex-shrink-0" style="margin-bottom:0">銷量目標情境</p>
-            <div class="inline-flex bg-stone-100 rounded-full p-1 gap-1">
-              <button onclick="setViewMode('salesMix')" id="vm_mix" class="text-xs font-semibold px-3 py-1 rounded-full transition-colors cursor-pointer">📊 銷售組合</button>
-              <button onclick="setViewMode('reference')" id="vm_ref" class="text-xs font-semibold px-3 py-1 rounded-full transition-colors cursor-pointer">🔍 平均銷售</button>
+            <div class="inline-flex bg-stone-200 rounded-full p-1 gap-1">
+              <button onclick="setViewMode('salesMix')" id="vm_mix" class="text-sm font-semibold px-4 py-1.5 rounded-full transition-colors cursor-pointer">📊 銷售組合</button>
+              <button onclick="setViewMode('reference')" id="vm_ref" class="text-sm font-semibold px-4 py-1.5 rounded-full transition-colors cursor-pointer">🔍 平均銷售</button>
             </div>
           </div>
 
@@ -1319,19 +1319,16 @@ function setViewMode(mode) {
   document.getElementById('view_salesMix').classList.toggle('hidden', mode !== 'salesMix');
   document.getElementById('view_reference').classList.toggle('hidden', mode !== 'reference');
   // Update segmented-control active styling
+  const activeCls   = ['bg-stone-800', 'text-white', 'shadow-md'];
+  const inactiveCls = ['text-stone-600', 'hover:bg-white/60'];
   const mixBtn = document.getElementById('vm_mix');
   const refBtn = document.getElementById('vm_ref');
-  if (mode === 'salesMix') {
-    mixBtn.classList.add('bg-white', 'text-orange-600', 'shadow-sm');
-    mixBtn.classList.remove('text-stone-500');
-    refBtn.classList.remove('bg-white', 'text-orange-600', 'shadow-sm');
-    refBtn.classList.add('text-stone-500');
-  } else {
-    refBtn.classList.add('bg-white', 'text-orange-600', 'shadow-sm');
-    refBtn.classList.remove('text-stone-500');
-    mixBtn.classList.remove('bg-white', 'text-orange-600', 'shadow-sm');
-    mixBtn.classList.add('text-stone-500');
-  }
+  const set = (btn, isActive) => {
+    activeCls.forEach(c => btn.classList.toggle(c, isActive));
+    inactiveCls.forEach(c => btn.classList.toggle(c, !isActive));
+  };
+  set(mixBtn, mode === 'salesMix');
+  set(refBtn, mode === 'reference');
   highlightScenario();
   calc();
 }
