@@ -1,13 +1,10 @@
 {
   "flavors": [
     {
-      "name": "茉莉"
+      "name": "牛奶"
     },
     {
       "name": "花生"
-    },
-    {
-      "name": "巧克力"
     }
   ],
   "types": [
@@ -16,37 +13,49 @@
     },
     {
       "name": "🍨 聖代"
+    },
+    {
+      "name": "紅茶牛奶漂浮"
+    },
+    {
+      "name": "Shot"
     }
   ],
   "matrix": [
     [
       {
-        "price": 150,
-        "gm": 62
+        "price": 130,
+        "gm": 70
       },
       {
         "price": 250,
-        "gm": 65
+        "gm": 75
+      },
+      {
+        "price": 160,
+        "gm": 70
+      },
+      {
+        "price": 50,
+        "gm": 70
       }
     ],
     [
       {
         "price": 150,
-        "gm": 62
+        "gm": 60
       },
       {
         "price": 250,
         "gm": 65
-      }
-    ],
-    [
-      {
-        "price": 150,
-        "gm": 62
       },
       {
-        "price": 250,
-        "gm": 65
+        "price": 160,
+        "gm": 70
+      },
+      {
+        "price": 100,
+        "gm": 60
       }
     ]
   ],
@@ -56,14 +65,14 @@
       "hours": 9,
       "ptPct": 30,
       "ptWage": 200,
-      "ptCount": 2
+      "ptCount": 1
     },
     "fixedCosts": {
       "rent": 13000,
-      "utilities": 3000,
+      "utilities": 4400,
       "depreciation": 11590,
       "depreciationEnabled": false,
-      "fulltime": 41155
+      "fulltime": 35500
     },
     "b2b": {
       "rebate": 15
